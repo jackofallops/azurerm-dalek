@@ -13,6 +13,7 @@ var ResourceGroupCleaners = []ResourceGroupCleaner{
 	// would prevent us from doing anything else, so that needs to be first.
 	removeLocksFromResourceGroupCleaner{},
 	removeDataProtectionFromResourceGroupCleaner{},
+	eventhubNamespaceBreakPairingCleaner{},
 	notificationHubNamespacesCleaner{},
 	paloAltoLocalRulestackCleaner{},
 	serviceBusNamespaceBreakPairingCleaner{},

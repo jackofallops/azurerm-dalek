@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2023-05-01"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
+	eventhubNamespace "github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2022-01-01-preview/namespaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/keyvault/2023-07-01/managedhsms"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2023-10-01/workspaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
@@ -43,6 +45,8 @@ type MicrosoftGraphClient struct {
 
 type ResourceManagerClient struct {
 	DataProtection                  *dataProtection.Client
+	EventHubDisasterRecoveryClient  *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
+	EventHubNameSpaceClient         *eventhubNamespace.NamespacesClient
 	LocksClient                     *managementlocks.ManagementLocksClient
 	MachineLearningWorkspacesClient *workspaces.WorkspacesClient
 	ManagedHSMsClient               *managedhsms.ManagedHsmsClient
@@ -170,6 +174,18 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		return nil, fmt.Errorf("building Data Protection Client: %+v", err)
 	}
 
+	eventHubDisasterRecoveryClient, err := disasterrecoveryconfigs.NewDisasterRecoveryConfigsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building EventHub DisasterConfigsRecovery client: %+v", err)
+	}
+	eventHubDisasterRecoveryClient.Client.Authorizer = resourceManagerAuthorizer
+
+	eventHubNameSpaceClient, err := eventhubNamespace.NewNamespacesClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building EventHubNameSpace client: %+v", err)
+	}
+	eventHubNameSpaceClient.Client.Authorizer = resourceManagerAuthorizer
+
 	locksClient, err := managementlocks.NewManagementLocksClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building ManagementLocks client: %+v", err)
@@ -270,6 +286,8 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 
 	return &ResourceManagerClient{
 		DataProtection:                  dataProtectionClient,
+		EventHubDisasterRecoveryClient:  eventHubDisasterRecoveryClient,
+		EventHubNameSpaceClient:         eventHubNameSpaceClient,
 		LocksClient:                     locksClient,
 		MachineLearningWorkspacesClient: workspacesClient,
 		ManagedHSMsClient:               managedHsmsClient,
