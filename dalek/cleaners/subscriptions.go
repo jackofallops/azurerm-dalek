@@ -8,7 +8,7 @@ import (
 	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
 )
 
-var SubscriptionCleaners = []SubscriptionCleaner{
+var SubscrigptionCleaners = []SubscriptionCleaner{
 	// deleteNetAppSubscriptionCleaner{},
 	deleteRecoveryServicesVaultSubscriptionCleaner{},
 	//deleteStorageSyncSubscriptionCleaner{},

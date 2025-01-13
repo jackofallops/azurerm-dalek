@@ -1,13 +1,14 @@
 
 ## `github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups` Documentation
 
-The `managementgroups` SDK allows for interaction with the Azure Resource Manager Service `managementgroups` (API Version `2021-04-01`).
+The `managementgroups` SDK allows for interaction with Azure Resource Manager `managementgroups` (API Version `2021-04-01`).
 
 This readme covers example usages, but further information on [using this SDK can be found in the project root](https://github.com/hashicorp/go-azure-sdk/tree/main/docs).
 
 ### Import Path
 
 ```go
+import "github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 import "github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
 ```
 
@@ -24,7 +25,7 @@ client.Client.Authorizer = authorizer
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 payload := managementgroups.CreateManagementGroupRequest{
 	// ...
@@ -41,7 +42,7 @@ if err := client.CreateOrUpdateThenPoll(ctx, id, payload, managementgroups.Defau
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 if err := client.DeleteThenPoll(ctx, id, managementgroups.DefaultDeleteOperationOptions()); err != nil {
 	// handle the error
@@ -53,7 +54,7 @@ if err := client.DeleteThenPoll(ctx, id, managementgroups.DefaultDeleteOperation
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 read, err := client.Get(ctx, id, managementgroups.DefaultGetOperationOptions())
 if err != nil {
@@ -69,7 +70,7 @@ if model := read.Model; model != nil {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 // alternatively `client.GetDescendants(ctx, id, managementgroups.DefaultGetDescendantsOperationOptions())` can be used to do batched pagination
 items, err := client.GetDescendantsComplete(ctx, id, managementgroups.DefaultGetDescendantsOperationOptions())
@@ -86,7 +87,7 @@ for _, item := range items {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 payload := managementgroups.CreateOrUpdateSettingsRequest{
 	// ...
@@ -107,7 +108,7 @@ if model := read.Model; model != nil {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 read, err := client.HierarchySettingsDelete(ctx, id)
 if err != nil {
@@ -123,7 +124,7 @@ if model := read.Model; model != nil {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 read, err := client.HierarchySettingsGet(ctx, id)
 if err != nil {
@@ -139,7 +140,7 @@ if model := read.Model; model != nil {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 read, err := client.HierarchySettingsList(ctx, id)
 if err != nil {
@@ -155,7 +156,7 @@ if model := read.Model; model != nil {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 payload := managementgroups.CreateOrUpdateSettingsRequest{
 	// ...
@@ -189,13 +190,13 @@ for _, item := range items {
 ```
 
 
-### Example Usage: `ManagementGroupsClient.UbscriptionsCreate`
+### Example Usage: `ManagementGroupsClient.SubscriptionsCreate`
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewSubscriptionID("groupIdValue", "12345678-1234-9876-4563-123456789012")
+id := managementgroups.NewSubscriptionID("groupId", "12345678-1234-9876-4563-123456789012")
 
-read, err := client.UbscriptionsCreate(ctx, id, managementgroups.DefaultUbscriptionsCreateOperationOptions())
+read, err := client.SubscriptionsCreate(ctx, id, managementgroups.DefaultSubscriptionsCreateOperationOptions())
 if err != nil {
 	// handle the error
 }
@@ -205,13 +206,13 @@ if model := read.Model; model != nil {
 ```
 
 
-### Example Usage: `ManagementGroupsClient.UbscriptionsDelete`
+### Example Usage: `ManagementGroupsClient.SubscriptionsDelete`
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewSubscriptionID("groupIdValue", "12345678-1234-9876-4563-123456789012")
+id := managementgroups.NewSubscriptionID("groupId", "12345678-1234-9876-4563-123456789012")
 
-read, err := client.UbscriptionsDelete(ctx, id, managementgroups.DefaultUbscriptionsDeleteOperationOptions())
+read, err := client.SubscriptionsDelete(ctx, id, managementgroups.DefaultSubscriptionsDeleteOperationOptions())
 if err != nil {
 	// handle the error
 }
@@ -221,13 +222,13 @@ if model := read.Model; model != nil {
 ```
 
 
-### Example Usage: `ManagementGroupsClient.UbscriptionsGetSubscription`
+### Example Usage: `ManagementGroupsClient.SubscriptionsGetSubscription`
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewSubscriptionID("groupIdValue", "12345678-1234-9876-4563-123456789012")
+id := managementgroups.NewSubscriptionID("groupId", "12345678-1234-9876-4563-123456789012")
 
-read, err := client.UbscriptionsGetSubscription(ctx, id, managementgroups.DefaultUbscriptionsGetSubscriptionOperationOptions())
+read, err := client.SubscriptionsGetSubscription(ctx, id, managementgroups.DefaultSubscriptionsGetSubscriptionOperationOptions())
 if err != nil {
 	// handle the error
 }
@@ -237,14 +238,14 @@ if model := read.Model; model != nil {
 ```
 
 
-### Example Usage: `ManagementGroupsClient.UbscriptionsGetSubscriptionsUnderManagementGroup`
+### Example Usage: `ManagementGroupsClient.SubscriptionsGetSubscriptionsUnderManagementGroup`
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
-// alternatively `client.UbscriptionsGetSubscriptionsUnderManagementGroup(ctx, id)` can be used to do batched pagination
-items, err := client.UbscriptionsGetSubscriptionsUnderManagementGroupComplete(ctx, id)
+// alternatively `client.SubscriptionsGetSubscriptionsUnderManagementGroup(ctx, id)` can be used to do batched pagination
+items, err := client.SubscriptionsGetSubscriptionsUnderManagementGroupComplete(ctx, id)
 if err != nil {
 	// handle the error
 }
@@ -258,7 +259,7 @@ for _, item := range items {
 
 ```go
 ctx := context.TODO()
-id := managementgroups.NewManagementGroupID("groupIdValue")
+id := commonids.NewManagementGroupID("groupId")
 
 payload := managementgroups.PatchManagementGroupRequest{
 	// ...

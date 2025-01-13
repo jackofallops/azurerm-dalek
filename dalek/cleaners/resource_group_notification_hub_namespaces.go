@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2017-04-01/namespaces"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
 	"github.com/tombuildsstuff/azurerm-dalek/clients"
 	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
@@ -37,7 +37,7 @@ func (c notificationHubNamespacesCleaner) Cleanup(ctx context.Context, id common
 		}
 
 		log.Printf("[DEBUG] Deleting %s..", namespaceId)
-		if err := client.ResourceManager.NotificationHubNamespaceClient.DeleteThenPoll(ctx, namespaceId); err != nil {
+		if _, err := client.ResourceManager.NotificationHubNamespaceClient.Delete(ctx, namespaceId); err != nil {
 			return fmt.Errorf("deleting %s: %+v", namespaceId, err)
 		}
 		log.Printf("[DEBUG] Deleted %s.", namespaceId)

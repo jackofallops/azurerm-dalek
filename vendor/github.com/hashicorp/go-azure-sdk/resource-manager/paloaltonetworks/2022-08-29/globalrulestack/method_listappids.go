@@ -15,7 +15,12 @@ import (
 type ListAppIdsOperationResponse struct {
 	HttpResponse *http.Response
 	OData        *odata.OData
-	Model        *ListAppIdResponse
+	Model        *[]string
+}
+
+type ListAppIdsCompleteResult struct {
+	LatestHttpResponse *http.Response
+	Items              []string
 }
 
 type ListAppIdsOperationOptions struct {
@@ -37,6 +42,7 @@ func (o ListAppIdsOperationOptions) ToHeaders() *client.Headers {
 
 func (o ListAppIdsOperationOptions) ToOData() *odata.Query {
 	out := odata.Query{}
+
 	return &out
 }
 
@@ -57,6 +63,18 @@ func (o ListAppIdsOperationOptions) ToQuery() *client.QueryParams {
 	return &out
 }
 
+type ListAppIdsCustomPager struct {
+	NextLink *odata.Link `json:"nextLink"`
+}
+
+func (p *ListAppIdsCustomPager) NextPageLink() *odata.Link {
+	defer func() {
+		p.NextLink = nil
+	}()
+
+	return p.NextLink
+}
+
 // ListAppIds ...
 func (c GlobalRulestackClient) ListAppIds(ctx context.Context, id GlobalRulestackId, options ListAppIdsOperationOptions) (result ListAppIdsOperationResponse, err error) {
 	opts := client.RequestOptions{
@@ -65,8 +83,9 @@ func (c GlobalRulestackClient) ListAppIds(ctx context.Context, id GlobalRulestac
 			http.StatusOK,
 		},
 		HttpMethod:    http.MethodPost,
-		Path:          fmt.Sprintf("%s/listAppIds", id.ID()),
 		OptionsObject: options,
+		Pager:         &ListAppIdsCustomPager{},
+		Path:          fmt.Sprintf("%s/listAppIds", id.ID()),
 	}
 
 	req, err := c.Client.NewRequest(ctx, opts)
@@ -75,7 +94,7 @@ func (c GlobalRulestackClient) ListAppIds(ctx context.Context, id GlobalRulestac
 	}
 
 	var resp *client.Response
-	resp, err = req.Execute(ctx)
+	resp, err = req.ExecutePaged(ctx)
 	if resp != nil {
 		result.OData = resp.OData
 		result.HttpResponse = resp.Response
@@ -84,9 +103,37 @@ func (c GlobalRulestackClient) ListAppIds(ctx context.Context, id GlobalRulestac
 		return
 	}
 
-	if err = resp.Unmarshal(&result.Model); err != nil {
+	var values struct {
+		Values *[]string `json:"value"`
+	}
+	if err = resp.Unmarshal(&values); err != nil {
 		return
 	}
 
+	result.Model = values.Values
+
+	return
+}
+
+// ListAppIdsComplete retrieves all the results into a single object
+func (c GlobalRulestackClient) ListAppIdsComplete(ctx context.Context, id GlobalRulestackId, options ListAppIdsOperationOptions) (result ListAppIdsCompleteResult, err error) {
+	items := make([]string, 0)
+
+	resp, err := c.ListAppIds(ctx, id, options)
+	if err != nil {
+		result.LatestHttpResponse = resp.HttpResponse
+		err = fmt.Errorf("loading results: %+v", err)
+		return
+	}
+	if resp.Model != nil {
+		for _, v := range *resp.Model {
+			items = append(items, v)
+		}
+	}
+
+	result = ListAppIdsCompleteResult{
+		LatestHttpResponse: resp.HttpResponse,
+		Items:              items,
+	}
 	return
 }
