@@ -9,11 +9,12 @@ import (
 )
 
 var SubscriptionCleaners = []SubscriptionCleaner{
-	deleteNetAppSubscriptionCleaner{},
-	deleteStorageSyncSubscriptionCleaner{},
-	deleteResourceGroupsInSubscriptionCleaner{},
-	purgeSoftDeletedManagedHSMsInSubscriptionCleaner{},
-	purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner{},
+	// deleteNetAppSubscriptionCleaner{},
+	deleteRecoveryServicesVaultSubscriptionCleaner{},
+	//deleteStorageSyncSubscriptionCleaner{},
+	//deleteResourceGroupsInSubscriptionCleaner{},
+	//purgeSoftDeletedManagedHSMsInSubscriptionCleaner{},
+	//purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner{},
 }
 
 type SubscriptionCleaner interface {

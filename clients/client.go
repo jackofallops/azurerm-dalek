@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2017-04-01/namespaces"
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2023-02-01/vaults"
 	resourceGraph "github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
@@ -57,6 +58,7 @@ type ResourceManagerClient struct {
 	NetAppVolumeReplicationClient   *volumesreplication.VolumesReplicationClient
 	NotificationHubNamespaceClient  *namespaces.NamespacesClient
 	PaloAlto                        *paloAltoNetworks.Client
+	RecoveryServicesVaultClient     *vaults.VaultsClient
 	ResourceGraphClient             *resourceGraph.ResourcesClient
 	ResourcesGroupsClient           *resourcegroups.ResourceGroupsClient
 	ServiceBus                      *serviceBus.Client
@@ -247,6 +249,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		return nil, fmt.Errorf("building Palo Alto Networks Client: %+v", err)
 	}
 
+	recoveryServicesVaultClient, err := vaults.NewVaultsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building Recovery Services Vault client: %+v", err)
+	}
+	recoveryServicesVaultClient.Client.Authorizer = resourceManagerAuthorizer
+
 	resourceGraphClient, err := resourceGraph.NewResourcesClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building ResourceGraph client: %+v", err)
@@ -298,6 +306,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		NetAppVolumeReplicationClient:   netAppVolumeReplicationClient,
 		NotificationHubNamespaceClient:  notificationHubNamespacesClient,
 		PaloAlto:                        paloAltoClient,
+		RecoveryServicesVaultClient:     recoveryServicesVaultClient,
 		ResourceGraphClient:             resourceGraphClient,
 		ResourcesGroupsClient:           resourcesClient,
 		ServiceBus:                      serviceBusClient,
