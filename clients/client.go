@@ -18,6 +18,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotecteditems"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
 	resourceGraph "github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
@@ -26,6 +28,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
 	"github.com/hashicorp/go-azure-sdk/sdk/auth"
+	authWrapper "github.com/hashicorp/go-azure-sdk/sdk/auth/autorest"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
 	"github.com/hashicorp/go-azure-sdk/sdk/environments"
 	"github.com/manicminer/hamilton/msgraph"
@@ -45,26 +48,28 @@ type MicrosoftGraphClient struct {
 }
 
 type ResourceManagerClient struct {
-	DataProtection                  *dataProtection.Client
-	EventHubDisasterRecoveryClient  *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
-	EventHubNameSpaceClient         *eventhubNamespace.NamespacesClient
-	LocksClient                     *managementlocks.ManagementLocksClient
-	MachineLearningWorkspacesClient *workspaces.WorkspacesClient
-	ManagedHSMsClient               *managedhsms.ManagedHsmsClient
-	ManagementClient                *managementgroups.ManagementGroupsClient
-	NetAppAccountClient             *netappaccounts.NetAppAccountsClient
-	NetAppCapacityPoolClient        *capacitypools.CapacityPoolsClient
-	NetAppVolumeClient              *volumes.VolumesClient
-	NetAppVolumeReplicationClient   *volumesreplication.VolumesReplicationClient
-	NotificationHubNamespaceClient  *namespaces.NamespacesClient
-	PaloAlto                        *paloAltoNetworks.Client
-	RecoveryServicesVaultClient     *vaults.VaultsClient
-	ResourceGraphClient             *resourceGraph.ResourcesClient
-	ResourcesGroupsClient           *resourcegroups.ResourceGroupsClient
-	ServiceBus                      *serviceBus.Client
-	StorageSyncClient               *storagesyncservicesresource.StorageSyncServicesResourceClient
-	StorageSyncGroupClient          *syncgroupresource.SyncGroupResourceClient
-	StorageSyncCloudEndpointClient  *cloudendpointresource.CloudEndpointResourceClient
+	DataProtection                             *dataProtection.Client
+	EventHubDisasterRecoveryClient             *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
+	EventHubNameSpaceClient                    *eventhubNamespace.NamespacesClient
+	LocksClient                                *managementlocks.ManagementLocksClient
+	MachineLearningWorkspacesClient            *workspaces.WorkspacesClient
+	ManagedHSMsClient                          *managedhsms.ManagedHsmsClient
+	ManagementClient                           *managementgroups.ManagementGroupsClient
+	NetAppAccountClient                        *netappaccounts.NetAppAccountsClient
+	NetAppCapacityPoolClient                   *capacitypools.CapacityPoolsClient
+	NetAppVolumeClient                         *volumes.VolumesClient
+	NetAppVolumeReplicationClient              *volumesreplication.VolumesReplicationClient
+	NotificationHubNamespaceClient             *namespaces.NamespacesClient
+	PaloAlto                                   *paloAltoNetworks.Client
+	RecoveryServicesVaultClient                *vaults.VaultsClient
+	RecoveryServicesProtectedItemClient        *protecteditems.ProtectedItemsClient
+	RecoveryServicesBackupProtectedItemsClient *backupprotecteditems.BackupProtectedItemsClient
+	ResourceGraphClient                        *resourceGraph.ResourcesClient
+	ResourcesGroupsClient                      *resourcegroups.ResourceGroupsClient
+	ServiceBus                                 *serviceBus.Client
+	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
+	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
+	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
 }
 
 type Credentials struct {
@@ -169,6 +174,13 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		return nil, fmt.Errorf("building Resource Manager authorizer: %+v", err)
 	}
 
+	autoRestAuthorizer := authWrapper.AutorestAuthorizer(resourceManagerAuthorizer)
+
+	resourceManagerEndpoint, ok := environment.ResourceManager.Endpoint()
+	if !ok {
+		return nil, fmt.Errorf("environment %q was missing a Resource Manager endpoint", environment.Name)
+	}
+
 	dataProtectionClient, err := dataProtection.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
 		c.Authorizer = resourceManagerAuthorizer
 	})
@@ -255,6 +267,18 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	recoveryServicesVaultClient.Client.Authorizer = resourceManagerAuthorizer
 
+	recoveryServicesProtectedItemClient := protecteditems.NewProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("building Recovery Services Protected Item client: %+v", err)
+	}
+	recoveryServicesProtectedItemClient.Client.Authorizer = autoRestAuthorizer
+
+	recoveryServicesBackupProtectedItemsClient := backupprotecteditems.NewBackupProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("building Recovery Services Backup Protected Items client: %+v", err)
+	}
+	recoveryServicesBackupProtectedItemsClient.Client.Authorizer = autoRestAuthorizer
+
 	resourceGraphClient, err := resourceGraph.NewResourcesClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building ResourceGraph client: %+v", err)
@@ -293,25 +317,27 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	storageSyncCloudEndpointClient.Client.Authorizer = resourceManagerAuthorizer
 
 	return &ResourceManagerClient{
-		DataProtection:                  dataProtectionClient,
-		EventHubDisasterRecoveryClient:  eventHubDisasterRecoveryClient,
-		EventHubNameSpaceClient:         eventHubNameSpaceClient,
-		LocksClient:                     locksClient,
-		MachineLearningWorkspacesClient: workspacesClient,
-		ManagedHSMsClient:               managedHsmsClient,
-		ManagementClient:                managementClient,
-		NetAppAccountClient:             netAppAccountClient,
-		NetAppCapacityPoolClient:        netAppCapacityPoolClient,
-		NetAppVolumeClient:              netAppVolumeClient,
-		NetAppVolumeReplicationClient:   netAppVolumeReplicationClient,
-		NotificationHubNamespaceClient:  notificationHubNamespacesClient,
-		PaloAlto:                        paloAltoClient,
-		RecoveryServicesVaultClient:     recoveryServicesVaultClient,
-		ResourceGraphClient:             resourceGraphClient,
-		ResourcesGroupsClient:           resourcesClient,
-		ServiceBus:                      serviceBusClient,
-		StorageSyncClient:               storageSyncClient,
-		StorageSyncGroupClient:          storageSyncGroupClient,
-		StorageSyncCloudEndpointClient:  storageSyncCloudEndpointClient,
+		DataProtection:                             dataProtectionClient,
+		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
+		EventHubNameSpaceClient:                    eventHubNameSpaceClient,
+		LocksClient:                                locksClient,
+		MachineLearningWorkspacesClient:            workspacesClient,
+		ManagedHSMsClient:                          managedHsmsClient,
+		ManagementClient:                           managementClient,
+		NetAppAccountClient:                        netAppAccountClient,
+		NetAppCapacityPoolClient:                   netAppCapacityPoolClient,
+		NetAppVolumeClient:                         netAppVolumeClient,
+		NetAppVolumeReplicationClient:              netAppVolumeReplicationClient,
+		NotificationHubNamespaceClient:             notificationHubNamespacesClient,
+		PaloAlto:                                   paloAltoClient,
+		RecoveryServicesBackupProtectedItemsClient: &recoveryServicesBackupProtectedItemsClient,
+		RecoveryServicesProtectedItemClient:        &recoveryServicesProtectedItemClient,
+		RecoveryServicesVaultClient:                recoveryServicesVaultClient,
+		ResourceGraphClient:                        resourceGraphClient,
+		ResourcesGroupsClient:                      resourcesClient,
+		ServiceBus:                                 serviceBusClient,
+		StorageSyncClient:                          storageSyncClient,
+		StorageSyncGroupClient:                     storageSyncGroupClient,
+		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
 	}, nil
 }
