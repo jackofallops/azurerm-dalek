@@ -18,5 +18,5 @@ func (d *Dalek) ResourceManager(ctx context.Context) (errors []error) {
 		}
 	}
 
-	return errors
+	return
 }
