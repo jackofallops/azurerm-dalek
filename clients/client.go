@@ -96,7 +96,7 @@ func BuildAzureClient(ctx context.Context, credentials Credentials) (*AzureClien
 		EnableAuthenticatingUsingClientSecret: true,
 	}
 
-	resourceManager, err := buildResourceManagerClient(ctx, creds, *environment)
+	resourceManager, err := buildResourceManagerClient(ctx, creds, *environment, credentials.SubscriptionID)
 	if err != nil {
 		return nil, fmt.Errorf("building Resource Manager client: %+v", err)
 	}
@@ -168,7 +168,7 @@ func buildMicrosoftGraphClient(ctx context.Context, creds auth.Credentials, envi
 	}, nil
 }
 
-func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, environment environments.Environment) (*ResourceManagerClient, error) {
+func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, environment environments.Environment, subscriptionId string) (*ResourceManagerClient, error) {
 	resourceManagerAuthorizer, err := auth.NewAuthorizerFromCredentials(ctx, creds, environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building Resource Manager authorizer: %+v", err)
