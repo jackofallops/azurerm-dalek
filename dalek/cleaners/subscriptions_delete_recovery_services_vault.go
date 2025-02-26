@@ -85,10 +85,6 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 			continue
 		}
 
-		if backupItemsVaultId == nil {
-			continue
-		}
-
 		backupItems, err := backupProtectedItemsClient.List(ctx, *backupItemsVaultId, backupprotecteditems.ListOperationOptions{})
 		if err != nil || backupItems.Model == nil {
 			log.Printf("listing Backup Protected Items for %q: %+v", backupItemsVaultId.ID(), err)

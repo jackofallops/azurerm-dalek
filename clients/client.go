@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
@@ -59,13 +60,14 @@ type ResourceManagerClient struct {
 	NetAppCapacityPoolClient                   *capacitypools.CapacityPoolsClient
 	NetAppVolumeClient                         *volumes.VolumesClient
 	NetAppVolumeReplicationClient              *volumesreplication.VolumesReplicationClient
+	NewRelicMonitorClient                      *monitors.MonitorsClient
 	NotificationHubNamespaceClient             *namespaces.NamespacesClient
 	PaloAlto                                   *paloAltoNetworks.Client
+	ResourceGraphClient                        *resourceGraph.ResourcesClient
+	ResourcesGroupsClient                      *resourcegroups.ResourceGroupsClient
 	RecoveryServicesVaultClient                *vaults.VaultsClient
 	RecoveryServicesProtectedItemClient        *protecteditems.ProtectedItemsClient
 	RecoveryServicesBackupProtectedItemsClient *backupprotecteditems.BackupProtectedItemsClient
-	ResourceGraphClient                        *resourceGraph.ResourcesClient
-	ResourcesGroupsClient                      *resourcegroups.ResourceGroupsClient
 	ServiceBus                                 *serviceBus.Client
 	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
 	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
@@ -248,6 +250,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	netAppVolumeReplicationClient.Client.Authorizer = resourceManagerAuthorizer
 
+	newRelicMonitorClient, err := monitors.NewMonitorsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building New Relic Monitor Client: %+v", err)
+	}
+	newRelicMonitorClient.Client.Authorizer = resourceManagerAuthorizer
+
 	notificationHubNamespacesClient, err := namespaces.NewNamespacesClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building Notification Hub Namespaces Client: %+v", err)
@@ -328,13 +336,14 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		NetAppCapacityPoolClient:                   netAppCapacityPoolClient,
 		NetAppVolumeClient:                         netAppVolumeClient,
 		NetAppVolumeReplicationClient:              netAppVolumeReplicationClient,
+		NewRelicMonitorClient:                      newRelicMonitorClient,
 		NotificationHubNamespaceClient:             notificationHubNamespacesClient,
 		PaloAlto:                                   paloAltoClient,
+		ResourceGraphClient:                        resourceGraphClient,
+		ResourcesGroupsClient:                      resourcesClient,
 		RecoveryServicesBackupProtectedItemsClient: &recoveryServicesBackupProtectedItemsClient,
 		RecoveryServicesProtectedItemClient:        &recoveryServicesProtectedItemClient,
 		RecoveryServicesVaultClient:                recoveryServicesVaultClient,
-		ResourceGraphClient:                        resourceGraphClient,
-		ResourcesGroupsClient:                      resourcesClient,
 		ServiceBus:                                 serviceBusClient,
 		StorageSyncClient:                          storageSyncClient,
 		StorageSyncGroupClient:                     storageSyncGroupClient,

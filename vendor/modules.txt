@@ -85,6 +85,7 @@ github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypoo
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication
+github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors
 github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces
 github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29
 github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29/certificateobjectglobalrulestack
