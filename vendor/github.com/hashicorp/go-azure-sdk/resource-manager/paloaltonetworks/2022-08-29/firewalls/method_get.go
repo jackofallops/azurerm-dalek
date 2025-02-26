@@ -43,7 +43,9 @@ func (c FirewallsClient) Get(ctx context.Context, id FirewallId) (result GetOper
 		return
 	}
 
-	if err = resp.Unmarshal(&result.Model); err != nil {
+	var model FirewallResource
+	result.Model = &model
+	if err = resp.Unmarshal(result.Model); err != nil {
 		return
 	}
 

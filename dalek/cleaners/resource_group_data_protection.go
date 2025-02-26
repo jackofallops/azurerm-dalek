@@ -7,10 +7,10 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2023-05-01/backupinstances"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2023-05-01/backuppolicies"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2023-05-01/backupvaults"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2023-05-01/deletedbackupinstances"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/backupinstances"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/backuppolicies"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/backupvaults"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/deletedbackupinstances"
 	"github.com/tombuildsstuff/azurerm-dalek/clients"
 	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
 )
@@ -42,7 +42,7 @@ func (removeDataProtectionFromResourceGroupCleaner) Cleanup(ctx context.Context,
 				},
 			},
 		}
-		if err := client.ResourceManager.DataProtection.BackupVaults.UpdateThenPoll(ctx, vaultId, patch); err != nil {
+		if err := client.ResourceManager.DataProtection.BackupVaults.UpdateThenPoll(ctx, vaultId, patch, backupvaults.DefaultUpdateOperationOptions()); err != nil {
 			log.Printf("Failed to turn off Soft Delete for %s: %+v", vaultId, err)
 			continue
 		}
@@ -82,7 +82,7 @@ func (removeDataProtectionFromResourceGroupCleaner) Cleanup(ctx context.Context,
 			}
 
 			log.Printf("[DEBUG] Deleting %s..", instanceId)
-			if err := client.ResourceManager.DataProtection.BackupInstances.DeleteThenPoll(ctx, instanceId); err != nil {
+			if err := client.ResourceManager.DataProtection.BackupInstances.DeleteThenPoll(ctx, instanceId, backupinstances.DefaultDeleteOperationOptions()); err != nil {
 				return fmt.Errorf("deleting %s: %+v", instanceId, err)
 			}
 			log.Printf("[DEBUG] Deleted %s.", instanceId)

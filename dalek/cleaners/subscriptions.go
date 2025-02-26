@@ -10,6 +10,7 @@ import (
 
 var SubscriptionCleaners = []SubscriptionCleaner{
 	deleteNetAppSubscriptionCleaner{},
+	deleteRecoveryServicesVaultSubscriptionCleaner{},
 	deleteNewRelicSubscriptionCleaner{},
 	deleteStorageSyncSubscriptionCleaner{},
 	deleteResourceGroupsInSubscriptionCleaner{},

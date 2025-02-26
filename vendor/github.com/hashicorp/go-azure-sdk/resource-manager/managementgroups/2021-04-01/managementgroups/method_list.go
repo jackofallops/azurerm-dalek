@@ -41,6 +41,7 @@ func (o ListOperationOptions) ToHeaders() *client.Headers {
 
 func (o ListOperationOptions) ToOData() *odata.Query {
 	out := odata.Query{}
+
 	return &out
 }
 
@@ -48,6 +49,18 @@ func (o ListOperationOptions) ToQuery() *client.QueryParams {
 	out := client.QueryParams{}
 
 	return &out
+}
+
+type ListCustomPager struct {
+	NextLink *odata.Link `json:"@nextLink"`
+}
+
+func (p *ListCustomPager) NextPageLink() *odata.Link {
+	defer func() {
+		p.NextLink = nil
+	}()
+
+	return p.NextLink
 }
 
 // List ...
@@ -58,8 +71,9 @@ func (c ManagementGroupsClient) List(ctx context.Context, options ListOperationO
 			http.StatusOK,
 		},
 		HttpMethod:    http.MethodGet,
-		Path:          "/providers/Microsoft.Management/managementGroups",
 		OptionsObject: options,
+		Pager:         &ListCustomPager{},
+		Path:          "/providers/Microsoft.Management/managementGroups",
 	}
 
 	req, err := c.Client.NewRequest(ctx, opts)
@@ -100,6 +114,7 @@ func (c ManagementGroupsClient) ListCompleteMatchingPredicate(ctx context.Contex
 
 	resp, err := c.List(ctx, options)
 	if err != nil {
+		result.LatestHttpResponse = resp.HttpResponse
 		err = fmt.Errorf("loading results: %+v", err)
 		return
 	}

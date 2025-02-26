@@ -15,7 +15,12 @@ import (
 type ListSecurityServicesOperationResponse struct {
 	HttpResponse *http.Response
 	OData        *odata.OData
-	Model        *SecurityServicesResponse
+	Model        *[]SecurityServicesTypeList
+}
+
+type ListSecurityServicesCompleteResult struct {
+	LatestHttpResponse *http.Response
+	Items              []SecurityServicesTypeList
 }
 
 type ListSecurityServicesOperationOptions struct {
@@ -36,6 +41,7 @@ func (o ListSecurityServicesOperationOptions) ToHeaders() *client.Headers {
 
 func (o ListSecurityServicesOperationOptions) ToOData() *odata.Query {
 	out := odata.Query{}
+
 	return &out
 }
 
@@ -53,6 +59,18 @@ func (o ListSecurityServicesOperationOptions) ToQuery() *client.QueryParams {
 	return &out
 }
 
+type ListSecurityServicesCustomPager struct {
+	NextLink *odata.Link `json:"nextLink"`
+}
+
+func (p *ListSecurityServicesCustomPager) NextPageLink() *odata.Link {
+	defer func() {
+		p.NextLink = nil
+	}()
+
+	return p.NextLink
+}
+
 // ListSecurityServices ...
 func (c GlobalRulestackClient) ListSecurityServices(ctx context.Context, id GlobalRulestackId, options ListSecurityServicesOperationOptions) (result ListSecurityServicesOperationResponse, err error) {
 	opts := client.RequestOptions{
@@ -61,8 +79,9 @@ func (c GlobalRulestackClient) ListSecurityServices(ctx context.Context, id Glob
 			http.StatusOK,
 		},
 		HttpMethod:    http.MethodPost,
-		Path:          fmt.Sprintf("%s/listSecurityServices", id.ID()),
 		OptionsObject: options,
+		Pager:         &ListSecurityServicesCustomPager{},
+		Path:          fmt.Sprintf("%s/listSecurityServices", id.ID()),
 	}
 
 	req, err := c.Client.NewRequest(ctx, opts)
@@ -71,7 +90,7 @@ func (c GlobalRulestackClient) ListSecurityServices(ctx context.Context, id Glob
 	}
 
 	var resp *client.Response
-	resp, err = req.Execute(ctx)
+	resp, err = req.ExecutePaged(ctx)
 	if resp != nil {
 		result.OData = resp.OData
 		result.HttpResponse = resp.Response
@@ -80,9 +99,44 @@ func (c GlobalRulestackClient) ListSecurityServices(ctx context.Context, id Glob
 		return
 	}
 
-	if err = resp.Unmarshal(&result.Model); err != nil {
+	var values struct {
+		Values *[]SecurityServicesTypeList `json:"value"`
+	}
+	if err = resp.Unmarshal(&values); err != nil {
 		return
 	}
 
+	result.Model = values.Values
+
+	return
+}
+
+// ListSecurityServicesComplete retrieves all the results into a single object
+func (c GlobalRulestackClient) ListSecurityServicesComplete(ctx context.Context, id GlobalRulestackId, options ListSecurityServicesOperationOptions) (ListSecurityServicesCompleteResult, error) {
+	return c.ListSecurityServicesCompleteMatchingPredicate(ctx, id, options, SecurityServicesTypeListOperationPredicate{})
+}
+
+// ListSecurityServicesCompleteMatchingPredicate retrieves all the results and then applies the predicate
+func (c GlobalRulestackClient) ListSecurityServicesCompleteMatchingPredicate(ctx context.Context, id GlobalRulestackId, options ListSecurityServicesOperationOptions, predicate SecurityServicesTypeListOperationPredicate) (result ListSecurityServicesCompleteResult, err error) {
+	items := make([]SecurityServicesTypeList, 0)
+
+	resp, err := c.ListSecurityServices(ctx, id, options)
+	if err != nil {
+		result.LatestHttpResponse = resp.HttpResponse
+		err = fmt.Errorf("loading results: %+v", err)
+		return
+	}
+	if resp.Model != nil {
+		for _, v := range *resp.Model {
+			if predicate.Matches(v) {
+				items = append(items, v)
+			}
+		}
+	}
+
+	result = ListSecurityServicesCompleteResult{
+		LatestHttpResponse: resp.HttpResponse,
+		Items:              items,
+	}
 	return
 }

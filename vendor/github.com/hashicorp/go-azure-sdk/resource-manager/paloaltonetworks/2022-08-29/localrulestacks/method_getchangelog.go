@@ -44,7 +44,9 @@ func (c LocalRulestacksClient) GetChangeLog(ctx context.Context, id LocalRulesta
 		return
 	}
 
-	if err = resp.Unmarshal(&result.Model); err != nil {
+	var model Changelog
+	result.Model = &model
+	if err = resp.Unmarshal(result.Model); err != nil {
 		return
 	}
 

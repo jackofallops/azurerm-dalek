@@ -1,13 +1,14 @@
 
 ## `github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts` Documentation
 
-The `netappaccounts` SDK allows for interaction with the Azure Resource Manager Service `netapp` (API Version `2023-05-01`).
+The `netappaccounts` SDK allows for interaction with Azure Resource Manager `netapp` (API Version `2023-05-01`).
 
 This readme covers example usages, but further information on [using this SDK can be found in the project root](https://github.com/hashicorp/go-azure-sdk/tree/main/docs).
 
 ### Import Path
 
 ```go
+import "github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 import "github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
 ```
 
@@ -24,7 +25,7 @@ client.Client.Authorizer = authorizer
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountValue")
+id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountName")
 
 payload := netappaccounts.NetAppAccount{
 	// ...
@@ -41,7 +42,7 @@ if err := client.AccountsCreateOrUpdateThenPoll(ctx, id, payload); err != nil {
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountValue")
+id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountName")
 
 if err := client.AccountsDeleteThenPoll(ctx, id); err != nil {
 	// handle the error
@@ -53,7 +54,7 @@ if err := client.AccountsDeleteThenPoll(ctx, id); err != nil {
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountValue")
+id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountName")
 
 read, err := client.AccountsGet(ctx, id)
 if err != nil {
@@ -69,7 +70,7 @@ if model := read.Model; model != nil {
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewResourceGroupID("12345678-1234-9876-4563-123456789012", "example-resource-group")
+id := commonids.NewResourceGroupID("12345678-1234-9876-4563-123456789012", "example-resource-group")
 
 // alternatively `client.AccountsList(ctx, id)` can be used to do batched pagination
 items, err := client.AccountsListComplete(ctx, id)
@@ -86,7 +87,7 @@ for _, item := range items {
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewSubscriptionID("12345678-1234-9876-4563-123456789012")
+id := commonids.NewSubscriptionID("12345678-1234-9876-4563-123456789012")
 
 // alternatively `client.AccountsListBySubscription(ctx, id)` can be used to do batched pagination
 items, err := client.AccountsListBySubscriptionComplete(ctx, id)
@@ -103,7 +104,7 @@ for _, item := range items {
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountValue")
+id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountName")
 
 if err := client.AccountsRenewCredentialsThenPoll(ctx, id); err != nil {
 	// handle the error
@@ -115,7 +116,7 @@ if err := client.AccountsRenewCredentialsThenPoll(ctx, id); err != nil {
 
 ```go
 ctx := context.TODO()
-id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountValue")
+id := netappaccounts.NewNetAppAccountID("12345678-1234-9876-4563-123456789012", "example-resource-group", "netAppAccountName")
 
 payload := netappaccounts.NetAppAccountPatch{
 	// ...

@@ -40,6 +40,7 @@ func (o GetDescendantsOperationOptions) ToHeaders() *client.Headers {
 
 func (o GetDescendantsOperationOptions) ToOData() *odata.Query {
 	out := odata.Query{}
+
 	return &out
 }
 
@@ -51,6 +52,18 @@ func (o GetDescendantsOperationOptions) ToQuery() *client.QueryParams {
 	return &out
 }
 
+type GetDescendantsCustomPager struct {
+	NextLink *odata.Link `json:"nextLink"`
+}
+
+func (p *GetDescendantsCustomPager) NextPageLink() *odata.Link {
+	defer func() {
+		p.NextLink = nil
+	}()
+
+	return p.NextLink
+}
+
 // GetDescendants ...
 func (c ManagementGroupsClient) GetDescendants(ctx context.Context, id commonids.ManagementGroupId, options GetDescendantsOperationOptions) (result GetDescendantsOperationResponse, err error) {
 	opts := client.RequestOptions{
@@ -59,8 +72,9 @@ func (c ManagementGroupsClient) GetDescendants(ctx context.Context, id commonids
 			http.StatusOK,
 		},
 		HttpMethod:    http.MethodGet,
-		Path:          fmt.Sprintf("%s/descendants", id.ID()),
 		OptionsObject: options,
+		Pager:         &GetDescendantsCustomPager{},
+		Path:          fmt.Sprintf("%s/descendants", id.ID()),
 	}
 
 	req, err := c.Client.NewRequest(ctx, opts)
@@ -101,6 +115,7 @@ func (c ManagementGroupsClient) GetDescendantsCompleteMatchingPredicate(ctx cont
 
 	resp, err := c.GetDescendants(ctx, id, options)
 	if err != nil {
+		result.LatestHttpResponse = resp.HttpResponse
 		err = fmt.Errorf("loading results: %+v", err)
 		return
 	}

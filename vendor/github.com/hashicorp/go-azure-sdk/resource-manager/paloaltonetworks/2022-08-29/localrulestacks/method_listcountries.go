@@ -15,7 +15,12 @@ import (
 type ListCountriesOperationResponse struct {
 	HttpResponse *http.Response
 	OData        *odata.OData
-	Model        *CountriesResponse
+	Model        *[]Country
+}
+
+type ListCountriesCompleteResult struct {
+	LatestHttpResponse *http.Response
+	Items              []Country
 }
 
 type ListCountriesOperationOptions struct {
@@ -35,6 +40,7 @@ func (o ListCountriesOperationOptions) ToHeaders() *client.Headers {
 
 func (o ListCountriesOperationOptions) ToOData() *odata.Query {
 	out := odata.Query{}
+
 	return &out
 }
 
@@ -49,6 +55,18 @@ func (o ListCountriesOperationOptions) ToQuery() *client.QueryParams {
 	return &out
 }
 
+type ListCountriesCustomPager struct {
+	NextLink *odata.Link `json:"nextLink"`
+}
+
+func (p *ListCountriesCustomPager) NextPageLink() *odata.Link {
+	defer func() {
+		p.NextLink = nil
+	}()
+
+	return p.NextLink
+}
+
 // ListCountries ...
 func (c LocalRulestacksClient) ListCountries(ctx context.Context, id LocalRulestackId, options ListCountriesOperationOptions) (result ListCountriesOperationResponse, err error) {
 	opts := client.RequestOptions{
@@ -57,8 +75,9 @@ func (c LocalRulestacksClient) ListCountries(ctx context.Context, id LocalRulest
 			http.StatusOK,
 		},
 		HttpMethod:    http.MethodPost,
-		Path:          fmt.Sprintf("%s/listCountries", id.ID()),
 		OptionsObject: options,
+		Pager:         &ListCountriesCustomPager{},
+		Path:          fmt.Sprintf("%s/listCountries", id.ID()),
 	}
 
 	req, err := c.Client.NewRequest(ctx, opts)
@@ -67,7 +86,7 @@ func (c LocalRulestacksClient) ListCountries(ctx context.Context, id LocalRulest
 	}
 
 	var resp *client.Response
-	resp, err = req.Execute(ctx)
+	resp, err = req.ExecutePaged(ctx)
 	if resp != nil {
 		result.OData = resp.OData
 		result.HttpResponse = resp.Response
@@ -76,9 +95,44 @@ func (c LocalRulestacksClient) ListCountries(ctx context.Context, id LocalRulest
 		return
 	}
 
-	if err = resp.Unmarshal(&result.Model); err != nil {
+	var values struct {
+		Values *[]Country `json:"value"`
+	}
+	if err = resp.Unmarshal(&values); err != nil {
 		return
 	}
 
+	result.Model = values.Values
+
+	return
+}
+
+// ListCountriesComplete retrieves all the results into a single object
+func (c LocalRulestacksClient) ListCountriesComplete(ctx context.Context, id LocalRulestackId, options ListCountriesOperationOptions) (ListCountriesCompleteResult, error) {
+	return c.ListCountriesCompleteMatchingPredicate(ctx, id, options, CountryOperationPredicate{})
+}
+
+// ListCountriesCompleteMatchingPredicate retrieves all the results and then applies the predicate
+func (c LocalRulestacksClient) ListCountriesCompleteMatchingPredicate(ctx context.Context, id LocalRulestackId, options ListCountriesOperationOptions, predicate CountryOperationPredicate) (result ListCountriesCompleteResult, err error) {
+	items := make([]Country, 0)
+
+	resp, err := c.ListCountries(ctx, id, options)
+	if err != nil {
+		result.LatestHttpResponse = resp.HttpResponse
+		err = fmt.Errorf("loading results: %+v", err)
+		return
+	}
+	if resp.Model != nil {
+		for _, v := range *resp.Model {
+			if predicate.Matches(v) {
+				items = append(items, v)
+			}
+		}
+	}
+
+	result = ListCountriesCompleteResult{
+		LatestHttpResponse: resp.HttpResponse,
+		Items:              items,
+	}
 	return
 }

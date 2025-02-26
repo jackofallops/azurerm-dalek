@@ -47,7 +47,9 @@ func (c FirewallsClient) Update(ctx context.Context, id FirewallId, input Firewa
 		return
 	}
 
-	if err = resp.Unmarshal(&result.Model); err != nil {
+	var model FirewallResource
+	result.Model = &model
+	if err = resp.Unmarshal(result.Model); err != nil {
 		return
 	}
 

@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-azure-helpers/resourcemanager/recaser"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/resourceids"
 )
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
+
+func init() {
+	recaser.RegisterResourceId(&DisasterRecoveryConfigAuthorizationRuleId{})
+}
 
 var _ resourceids.ResourceId = &DisasterRecoveryConfigAuthorizationRuleId{}
 
@@ -41,7 +46,7 @@ func ParseDisasterRecoveryConfigAuthorizationRuleID(input string) (*DisasterReco
 	}
 
 	id := DisasterRecoveryConfigAuthorizationRuleId{}
-	if err := id.FromParseResult(*parsed); err != nil {
+	if err = id.FromParseResult(*parsed); err != nil {
 		return nil, err
 	}
 
@@ -58,7 +63,7 @@ func ParseDisasterRecoveryConfigAuthorizationRuleIDInsensitively(input string) (
 	}
 
 	id := DisasterRecoveryConfigAuthorizationRuleId{}
-	if err := id.FromParseResult(*parsed); err != nil {
+	if err = id.FromParseResult(*parsed); err != nil {
 		return nil, err
 	}
 
@@ -122,11 +127,11 @@ func (id DisasterRecoveryConfigAuthorizationRuleId) Segments() []resourceids.Seg
 		resourceids.StaticSegment("staticProviders", "providers", "providers"),
 		resourceids.ResourceProviderSegment("staticMicrosoftServiceBus", "Microsoft.ServiceBus", "Microsoft.ServiceBus"),
 		resourceids.StaticSegment("staticNamespaces", "namespaces", "namespaces"),
-		resourceids.UserSpecifiedSegment("namespaceName", "namespaceValue"),
+		resourceids.UserSpecifiedSegment("namespaceName", "namespaceName"),
 		resourceids.StaticSegment("staticDisasterRecoveryConfigs", "disasterRecoveryConfigs", "disasterRecoveryConfigs"),
-		resourceids.UserSpecifiedSegment("disasterRecoveryConfigName", "disasterRecoveryConfigValue"),
+		resourceids.UserSpecifiedSegment("disasterRecoveryConfigName", "disasterRecoveryConfigName"),
 		resourceids.StaticSegment("staticAuthorizationRules", "authorizationRules", "authorizationRules"),
-		resourceids.UserSpecifiedSegment("authorizationRuleName", "authorizationRuleValue"),
+		resourceids.UserSpecifiedSegment("authorizationRuleName", "authorizationRuleName"),
 	}
 }
 
