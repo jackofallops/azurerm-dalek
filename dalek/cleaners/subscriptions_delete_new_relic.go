@@ -44,12 +44,12 @@ func (p deleteNewRelicSubscriptionCleaner) Cleanup(ctx context.Context, subscrip
 		}
 
 		if monitor.Properties.UserInfo == nil || monitor.Properties.UserInfo.EmailAddress == nil {
-			log.Printf("[DEBUG]`user` not found for %s..", monitorId)
+			log.Printf("[DEBUG] `user` not found for %s..", monitorId)
 			continue
 		}
 
 		if err = newRelicMonitorClient.DeleteThenPoll(ctx, *monitorId, monitors.DeleteOperationOptions{UserEmail: monitor.Properties.UserInfo.EmailAddress}); err != nil {
-			log.Printf("[DEBUG]deleting %s: %+v", monitorId, err)
+			log.Printf("[DEBUG] deleting %s: %+v", monitorId, err)
 			continue
 		}
 	}
