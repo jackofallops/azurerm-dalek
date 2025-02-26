@@ -3,6 +3,8 @@ package cleaners
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
@@ -10,7 +12,6 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
 	"github.com/tombuildsstuff/azurerm-dalek/clients"
 	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
-	"log"
 )
 
 type deleteRecoveryServicesVaultSubscriptionCleaner struct{}
@@ -85,7 +86,7 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 		}
 
 		if backupItemsVaultId == nil {
-			return fmt.Errorf("wtfff")
+			continue
 		}
 
 		backupItems, err := backupProtectedItemsClient.List(ctx, *backupItemsVaultId, backupprotecteditems.ListOperationOptions{})
