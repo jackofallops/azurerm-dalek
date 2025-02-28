@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29/localrules"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29/localrulestacks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29/prefixlistlocalrulestack"
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 type paloAltoLocalRulestackCleaner struct{}

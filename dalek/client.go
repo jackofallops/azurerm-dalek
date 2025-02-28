@@ -1,8 +1,8 @@
 package dalek
 
 import (
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 type Dalek struct {

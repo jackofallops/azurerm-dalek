@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/backuppolicies"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/backupvaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/deletedbackupinstances"
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 var _ ResourceGroupCleaner = removeDataProtectionFromResourceGroupCleaner{}

@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 type deleteStorageSyncSubscriptionCleaner struct{}

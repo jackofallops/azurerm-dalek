@@ -1,4 +1,4 @@
-module github.com/tombuildsstuff/azurerm-dalek
+module github.com/jackofallops/azurerm-dalek
 
 go 1.23.4
 

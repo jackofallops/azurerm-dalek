@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 type deleteNetAppSubscriptionCleaner struct{}

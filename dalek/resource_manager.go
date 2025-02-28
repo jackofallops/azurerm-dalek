@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/cleaners"
+	"github.com/jackofallops/azurerm-dalek/dalek/cleaners"
 )
 
 func (d *Dalek) ResourceManager(ctx context.Context) (errors []error) {

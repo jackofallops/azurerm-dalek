@@ -11,8 +11,8 @@ import (
 	servicebusV20220101Preview "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/disasterrecoveryconfigs"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/pollers"
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 var _ ResourceGroupCleaner = serviceBusNamespaceBreakPairingCleaner{}

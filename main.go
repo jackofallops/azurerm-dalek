@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tombuildsstuff/azurerm-dalek/clients"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek"
-	"github.com/tombuildsstuff/azurerm-dalek/dalek/options"
+	"github.com/jackofallops/azurerm-dalek/clients"
+	"github.com/jackofallops/azurerm-dalek/dalek"
+	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
 func main() {
