@@ -3,6 +3,9 @@ package cleaners
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
+	"golang.org/x/sync/errgroup"
 	"log"
 	"strings"
 	"time"
@@ -30,6 +33,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 	netAppCapcityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
 	netAppVolumeClient := client.ResourceManager.NetAppVolumeClient
 	netAppVolumeReplicationClient := client.ResourceManager.NetAppVolumeReplicationClient
+	netAppBackupVaultsClient := client.ResourceManager.NetAppBackupVaultsClient
+	netAppBackupsClient := client.ResourceManager.NetAppBackupsClient
 
 	accountLists, err := netAppAccountClient.AccountsListBySubscription(ctx, subscriptionId)
 	if err != nil {
@@ -116,9 +121,11 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 				forceDelete := true
 				// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-				if _, err = netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
+				if result, err := netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
 					// Potential Eventual Consistency Issues so we'll just log and move on
 					log.Printf("[DEBUG] Unable to delete %s: %+v", volumeId, err)
+				} else {
+					result.Poller.PollUntilDone(ctx)
 				}
 			}
 
@@ -135,6 +142,92 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 			// sleeping because there is some eventual consistency for when the capacity pool decouples from the account
 			time.Sleep(30 * time.Second)
+		}
+
+		accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(*account.Id)
+		if err != nil {
+			log.Printf("[DEBUG] Unable to parse NetApp Account ID for Backup Vaults: %+v", err)
+			continue
+		}
+		backupVaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
+		if err != nil {
+			return fmt.Errorf("listing NetApp Backup Vaults for %s: %+v", accountIdForBackupVault, err)
+		}
+
+		for _, vault := range backupVaultsList.Items {
+			if vault.Id == nil {
+				continue
+			}
+
+			vaultIdForBackup, err := backups.ParseBackupVaultID(*vault.Id)
+			if err != nil {
+				log.Printf("[ERROR] Couldn't parse vault ID %s", *vault.Id)
+			}
+			backupsList, err := netAppBackupsClient.ListByVaultComplete(ctx, *vaultIdForBackup, backups.ListByVaultOperationOptions{})
+			if err != nil {
+				return fmt.Errorf("listing NetApp Backups for %s: %+v", vaultIdForBackup, err)
+			}
+			g, egctx := errgroup.WithContext(ctx) // re-use the caller’s ctx for cancellation
+			for _, b := range backupsList.Items {
+				backup := b // capture loop variable
+				if backup.Id == nil {
+					continue
+				}
+				backupIDPtr, err := backups.ParseBackupID(*backup.Id)
+				if err != nil {
+					return err
+				}
+				if !opts.ActuallyDelete {
+					log.Printf("[DEBUG] Would have deleted %s..", backupIDPtr)
+					continue
+				}
+				// Dereference once so each goroutine gets its own value copy.
+				backupID := *backupIDPtr
+				// Start all DeleteThenPolls in parallel, each in its own Go routine
+				g.Go(func() error {
+					if err := netAppBackupsClient.DeleteThenPoll(egctx, backupID); err != nil {
+						log.Printf("[DEBUG] Unable to delete %s: %+v", backupID, err)
+						return err // bubbles up to g.Wait()
+					}
+					return nil
+				})
+			}
+			// Wait blocks until every g.Go() has finished. It returns the first non-nil error reported (if any).
+			if err := g.Wait(); err != nil {
+				return err
+			}
+			backupVaultId, err := backupvaults.ParseBackupVaultID(*vault.Id)
+
+			if !opts.ActuallyDelete {
+				log.Printf("[DEBUG] Would have deleted %s..", backupVaultId)
+				continue
+			}
+
+			if result, err := netAppBackupVaultsClient.Delete(ctx, *backupVaultId); err != nil {
+				log.Printf("[DEBUG] Unable to delete %s: %+v", backupVaultId, err)
+			} else {
+				if err := result.Poller.PollUntilDone(ctx); err != nil {
+					log.Printf("[DEBUG] Unable to poll deletion status of %s: %+v", backupVaultId, err)
+				}
+			}
+
+		}
+
+		if opts.ActuallyDelete {
+			maxAttempts := 4
+			for attempt := range maxAttempts {
+				vaults, _ := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
+				if vaults.Items == nil || len(vaults.Items) == 0 {
+					log.Printf("[DEBUG] Backup vaults successfully disassociated from NetApp account %s", accountIdForBackupVault)
+					break
+				} else {
+					log.Printf("[DEBUG] Attempt %d, Backup vaults not yet disassociated from NetApp account %s, waiting 30 seconds...", attempt+1, accountIdForBackupVault)
+					time.Sleep(30 * time.Second)
+				}
+				if attempt == maxAttempts-1 {
+					log.Printf("[DEBUG] Max retries reached, failed to disassociate Backup Vautls from NetApp account %s", accountIdForBackupVault)
+				}
+			}
 		}
 
 		accountId, err := netappaccounts.ParseNetAppAccountID(*account.Id)
