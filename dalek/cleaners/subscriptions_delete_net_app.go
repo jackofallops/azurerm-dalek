@@ -3,7 +3,6 @@ package cleaners
 import (
 	"context"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
+	"golang.org/x/sync/errgroup"
 )
 
 type deleteNetAppSubscriptionCleaner struct{}
