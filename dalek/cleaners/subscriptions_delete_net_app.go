@@ -131,15 +131,12 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				return err
 			}
 
-			// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-
 			if !opts.ActuallyDelete {
 				log.Printf("[DEBUG] Would have deleted %s..", capacityPoolId)
 				continue
 			}
 
 			if result, err := netAppCapcityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
-				// Potential Eventual Consistency Issues so we'll just log and move on
 				log.Printf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err)
 			} else {
 				result.Poller.PollUntilDone(ctx)
