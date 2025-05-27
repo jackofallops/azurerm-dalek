@@ -3,8 +3,6 @@ package cleaners
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"strings"
@@ -16,6 +14,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
@@ -60,11 +60,6 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			continue
 		}
 
-		if !opts.ActuallyDelete {
-			log.Printf("[DEBUG] Would have deleted %s..", accountIdForCapacityPool)
-			continue
-		}
-
 		capacityPoolList, err := netAppCapcityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
 		if err != nil {
 			return fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err)
@@ -78,11 +73,6 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(*capacityPool.Id)
 			if err != nil {
 				return err
-			}
-
-			if !opts.ActuallyDelete {
-				log.Printf("[DEBUG] Would have deleted %s..", capacityPoolForVolumesId)
-				continue
 			}
 
 			volumeList, err := netAppVolumeClient.ListComplete(ctx, *capacityPoolForVolumesId)
@@ -116,11 +106,18 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					}
 				}
 
-				// sleeping because there is some eventual consistency for when the replication decouples from the volume
-				time.Sleep(30 * time.Second)
+				if opts.ActuallyDelete {
+					// sleeping because there is some eventual consistency for when the replication decouples from the volume
+					time.Sleep(30 * time.Second)
+				}
 
 				forceDelete := true
-				// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
+
+				if !opts.ActuallyDelete {
+					log.Printf("[DEBUG] Would have deleted %s..", volumeId)
+					continue
+				}
+
 				if result, err := netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
 					// Potential Eventual Consistency Issues so we'll just log and move on
 					log.Printf("[DEBUG] Unable to delete %s: %+v", volumeId, err)
@@ -135,9 +132,17 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			}
 
 			// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-			if _, err = netAppCapcityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
+
+			if !opts.ActuallyDelete {
+				log.Printf("[DEBUG] Would have deleted %s..", capacityPoolId)
+				continue
+			}
+
+			if result, err := netAppCapcityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
 				// Potential Eventual Consistency Issues so we'll just log and move on
 				log.Printf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err)
+			} else {
+				result.Poller.PollUntilDone(ctx)
 			}
 
 			// sleeping because there is some eventual consistency for when the capacity pool decouples from the account
@@ -177,12 +182,14 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				if err != nil {
 					return err
 				}
-				if !opts.ActuallyDelete {
-					log.Printf("[DEBUG] Would have deleted %s..", backupIDPtr)
-					continue
-				}
 				// Dereference once so each goroutine gets its own value copy.
 				backupID := *backupIDPtr
+
+				if !opts.ActuallyDelete {
+					log.Printf("[DEBUG] Would have deleted %s..", backupID)
+					continue
+				}
+
 				// Start all DeleteThenPolls in parallel, each in its own Go routine
 				g.Go(func() error {
 					if err := netAppBackupsClient.DeleteThenPoll(egctx, backupID); err != nil {
@@ -210,7 +217,6 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					log.Printf("[DEBUG] Unable to poll deletion status of %s: %+v", backupVaultId, err)
 				}
 			}
-
 		}
 
 		if opts.ActuallyDelete {
@@ -218,7 +224,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			for attempt := range maxAttempts {
 				vaults, _ := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
 				if vaults.Items == nil || len(vaults.Items) == 0 {
-					log.Printf("[DEBUG] Backup vaults successfully disassociated from NetApp account %s", accountIdForBackupVault)
+					log.Printf("[DEBUG] Backup vaults successfully disassociated from NetApp account %s. Waiting 10 seconds just to allow eventual consistency to catch up.", accountIdForBackupVault)
+					time.Sleep(10 * time.Second)
 					break
 				} else {
 					log.Printf("[DEBUG] Attempt %d, Backup vaults not yet disassociated from NetApp account %s, waiting 30 seconds...", attempt+1, accountIdForBackupVault)
@@ -235,10 +242,23 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			return err
 		}
 
+		if !opts.ActuallyDelete {
+			log.Printf("[DEBUG] Would have deleted %s..", accountId)
+			continue
+		}
 		// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-		if _, err = netAppAccountClient.AccountsDelete(ctx, *accountId); err != nil {
-			// Potential Eventual Consistency Issues so we'll just log and move on
-			log.Printf("[DEBUG] Unable to delete %s: %+v", accountId, err)
+		maxAttempts := 4
+		for attempt := range maxAttempts {
+			if result, err := netAppAccountClient.AccountsDelete(ctx, *accountId); err != nil {
+				if !strings.Contains(err.Error(), "Cannot delete resource while nested resources exist") {
+					log.Printf("[DEBUG] Unable to delete %s: %+v", accountId, err)
+					break
+				}
+				log.Printf("[DEBUG] Attempt %d of %d, unable to delete NetApp account because it says it still has nested resources even though we deleted them. Waiting 30 seconds before retrying... %s: %+v", attempt+1, maxAttempts, accountId, err)
+				time.Sleep(30 * time.Second)
+			} else {
+				result.Poller.PollUntilDone(ctx)
+			}
 		}
 	}
 
