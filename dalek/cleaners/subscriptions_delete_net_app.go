@@ -164,6 +164,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			vaultIdForBackup, err := backups.ParseBackupVaultID(*vault.Id)
 			if err != nil {
 				log.Printf("[ERROR] Couldn't parse vault ID %s", *vault.Id)
+				continue
 			}
 			backupsList, err := netAppBackupsClient.ListByVaultComplete(ctx, *vaultIdForBackup, backups.ListByVaultOperationOptions{})
 			if err != nil {
@@ -229,7 +230,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					time.Sleep(30 * time.Second)
 				}
 				if attempt == maxAttempts-1 {
-					log.Printf("[DEBUG] Max retries reached, failed to disassociate Backup Vautls from NetApp account %s", accountIdForBackupVault)
+					log.Printf("[DEBUG] Max retries reached, failed to disassociate Backup Vaults from NetApp account %s", accountIdForBackupVault)
 				}
 			}
 		}
