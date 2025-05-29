@@ -190,9 +190,13 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 				// Start all DeleteThenPolls in parallel, each in its own Go routine
 				g.Go(func() error {
-					if err := netAppBackupsClient.DeleteThenPoll(egctx, backupID); err != nil {
+					if result, err := netAppBackupsClient.Delete(egctx, backupID); err != nil {
 						log.Printf("[DEBUG] Unable to delete %s: %+v", backupID, err)
 						return err // bubbles up to g.Wait()
+					} else {
+						if err = result.Poller.PollUntilDone(egctx); err != nil {
+							fmt.Errorf("[ERROR] Could not delete %s. %+v", backupID, err)
+						}
 					}
 					return nil
 				})
