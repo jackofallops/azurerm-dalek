@@ -182,7 +182,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 		if nestedResourceFailed {
 			log.Printf("[ERROR] Skipping NetApp account %s due to nested resource deletion failure.", *account.Id)
-			break
+			continue
 		}
 
 		accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(*account.Id)
