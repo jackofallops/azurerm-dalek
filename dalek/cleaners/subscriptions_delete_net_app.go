@@ -91,7 +91,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				}
 
 				if !opts.ActuallyDelete {
-					log.Printf("[DEBUG] Would have deleted %s..", volumeId)
+					log.Printf("[DEBUG] Would have deleted %s", volumeId)
 					continue
 				}
 
@@ -114,7 +114,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				forceDelete := true
 
 				if !opts.ActuallyDelete {
-					log.Printf("[DEBUG] Would have deleted %s..", volumeId)
+					log.Printf("[DEBUG] Would have deleted %s", volumeId)
 					continue
 				}
 
@@ -132,7 +132,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			}
 
 			if !opts.ActuallyDelete {
-				log.Printf("[DEBUG] Would have deleted %s..", capacityPoolId)
+				log.Printf("[DEBUG] Would have deleted %s", capacityPoolId)
 				continue
 			}
 
@@ -163,7 +163,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 			vaultIdForBackup, err := backups.ParseBackupVaultID(*vault.Id)
 			if err != nil {
-				log.Printf("[ERROR] Couldn't parse vault ID %s", *vault.Id)
+				log.Printf("[ERROR] Couldn't parse vault ID: %+v", err)
+				continue
 			}
 			backupsList, err := netAppBackupsClient.ListByVaultComplete(ctx, *vaultIdForBackup, backups.ListByVaultOperationOptions{})
 			if err != nil {
@@ -183,7 +184,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				backupID := *backupIDPtr
 
 				if !opts.ActuallyDelete {
-					log.Printf("[DEBUG] Would have deleted %s..", backupID)
+					log.Printf("[DEBUG] Would have deleted %s", backupID)
 					continue
 				}
 
@@ -203,7 +204,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			backupVaultId, err := backupvaults.ParseBackupVaultID(*vault.Id)
 
 			if !opts.ActuallyDelete {
-				log.Printf("[DEBUG] Would have deleted %s..", backupVaultId)
+				log.Printf("[DEBUG] Would have deleted %s", backupVaultId)
 				continue
 			}
 
@@ -229,7 +230,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					time.Sleep(30 * time.Second)
 				}
 				if attempt == maxAttempts-1 {
-					log.Printf("[DEBUG] Max retries reached, failed to disassociate Backup Vautls from NetApp account %s", accountIdForBackupVault)
+					log.Printf("[DEBUG] Max retries reached, failed to disassociate Backup Vaults from NetApp account %s", accountIdForBackupVault)
 				}
 			}
 		}
