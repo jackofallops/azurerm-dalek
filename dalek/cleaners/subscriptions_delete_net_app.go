@@ -221,7 +221,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			for attempt := range maxAttempts {
 				vaults, _ := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
 				if vaults.Items == nil || len(vaults.Items) == 0 {
-					log.Printf("[DEBUG] Backup vaults successfully disassociated from NetApp account %s. Waiting 10 seconds just to allow eventual consistency to catch up.", accountIdForBackupVault)
+					log.Printf("[DEBUG] Backup vaults successfully disassociated from %s. Waiting 10 seconds to allow for eventual consistency...", accountIdForBackupVault)
 					time.Sleep(10 * time.Second)
 					break
 				} else {
@@ -243,7 +243,6 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			log.Printf("[DEBUG] Would have deleted %s..", accountId)
 			continue
 		}
-		// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
 		maxAttempts := 4
 		for attempt := range maxAttempts {
 			if result, err := netAppAccountClient.AccountsDelete(ctx, *accountId); err != nil {
@@ -254,7 +253,11 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				log.Printf("[DEBUG] Attempt %d of %d, unable to delete NetApp account because it says it still has nested resources even though we deleted them. Waiting 30 seconds before retrying... %s: %+v", attempt+1, maxAttempts, accountId, err)
 				time.Sleep(30 * time.Second)
 			} else {
-				result.Poller.PollUntilDone(ctx)
+				if err = result.Poller.PollUntilDone(ctx); err != nil {
+					fmt.Errorf("[ERROR] Could not delete %s. %+v", accountId, err)
+				}
+				log.Printf("[DEBUG] Deleted %s.", accountId)
+				break
 			}
 		}
 	}
