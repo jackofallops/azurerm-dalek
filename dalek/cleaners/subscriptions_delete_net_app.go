@@ -28,6 +28,17 @@ func (p deleteNetAppSubscriptionCleaner) Name() string {
 	return "Removing Net App"
 }
 
+/*
+Nesting of Net App resources is such that deletion of Net App accounts must happen in the following order:
+
+1. Volume Replications
+2. Volumes
+3. Capacity Pools
+4. Backups
+5. Backup Vaults
+6. Net App Accounts
+*/
+
 func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	netAppAccountClient := client.ResourceManager.NetAppAccountClient
 	netAppCapcityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
@@ -104,6 +115,11 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					if !response.WasNotFound(resp.HttpResponse) {
 						return fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err)
 					}
+					if err = resp.Poller.PollUntilDone(ctx); err != nil {
+						return fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err)
+					} else {
+						log.Printf("[DEBUG] Deleted %s.", volumeReplicationId)
+					}
 				}
 
 				if opts.ActuallyDelete {
@@ -119,10 +135,14 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				}
 
 				if result, err := netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
-					// Potential Eventual Consistency Issues so we'll just log and move on
+					// Potential Eventual Consistency Issues, so we'll just log and move on
 					log.Printf("[DEBUG] Unable to delete %s: %+v", volumeId, err)
 				} else {
-					result.Poller.PollUntilDone(ctx)
+					if err = result.Poller.PollUntilDone(ctx); err != nil {
+						fmt.Errorf("[ERROR] Could not delete %s. %+v", volumeId, err)
+					} else {
+						log.Printf("[DEBUG] Deleted %s.", volumeId)
+					}
 				}
 			}
 
@@ -139,7 +159,11 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			if result, err := netAppCapcityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
 				log.Printf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err)
 			} else {
-				result.Poller.PollUntilDone(ctx)
+				if err = result.Poller.PollUntilDone(ctx); err != nil {
+					fmt.Errorf("[ERROR] Could not delete %s. %+v", capacityPoolId, err)
+				} else {
+					log.Printf("[DEBUG] Deleted %s.", capacityPoolId)
+				}
 			}
 
 			// sleeping because there is some eventual consistency for when the capacity pool decouples from the account
@@ -188,7 +212,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					continue
 				}
 
-				// Start all DeleteThenPolls in parallel, each in its own Go routine
+				// Start all deletions in parallel, each in its own Go routine
 				g.Go(func() error {
 					if result, err := netAppBackupsClient.Delete(egctx, backupID); err != nil {
 						log.Printf("[DEBUG] Unable to delete %s: %+v", backupID, err)
@@ -196,6 +220,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					} else {
 						if err = result.Poller.PollUntilDone(egctx); err != nil {
 							fmt.Errorf("[ERROR] Could not delete %s. %+v", backupID, err)
+						} else {
+							log.Printf("[DEBUG] Deleted %s.", backupID)
 						}
 					}
 					return nil
@@ -217,6 +243,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			} else {
 				if err := result.Poller.PollUntilDone(ctx); err != nil {
 					log.Printf("[DEBUG] Unable to poll deletion status of %s: %+v", backupVaultId, err)
+				} else {
+					log.Printf("[DEBUG] Deleted %s.", backupVaultId)
 				}
 			}
 		}
