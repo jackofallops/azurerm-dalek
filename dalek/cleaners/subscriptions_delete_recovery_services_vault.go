@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
@@ -40,6 +41,11 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 		vaultId, err := vaults.ParseVaultID(*vault.Id)
 		if err != nil {
 			log.Printf("[DEBUG] parsing id %q: %+v", *vault.Id, err)
+			continue
+		}
+
+		if !strings.HasPrefix(strings.ToLower(vaultId.ResourceGroupName), strings.ToLower(opts.Prefix)) {
+			log.Printf("[DEBUG]  Resource Group \"%s\" shouldn't be deleted - Skipping..", vaultId.ResourceGroupName)
 			continue
 		}
 

@@ -3,6 +3,7 @@ package cleaners
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/color"
 	"log"
 	"strings"
 	"time"
@@ -54,15 +55,15 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 		return fmt.Errorf("listing NetApp Accounts: model was nil")
 	}
 
-	waitSecondsAfterDeletion := 20 * time.Second
-	nestedResourceFailed := false
+	log.Printf("[DEBUG] Found %d NetApp Accounts", len(*accountLists.Model))
+
+	waitSecondsAfterDeletion := 60 * time.Second
 
 	for _, account := range *accountLists.Model {
-		nestedResourceFailed = false
-
 		if account.Id == nil {
 			continue
 		}
+		nestedResourceFailed := false
 
 		accountIdForCapacityPool, err := capacitypools.ParseNetAppAccountID(*account.Id)
 		if err != nil {
@@ -70,7 +71,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 		}
 
 		if !strings.HasPrefix(strings.ToLower(accountIdForCapacityPool.ResourceGroupName), strings.ToLower(opts.Prefix)) {
-			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", *accountIdForCapacityPool, opts.Prefix)
+			log.Printf("[DEBUG]  Resource Group \"%s\" shouldn't be deleted - Skipping..", accountIdForCapacityPool.ResourceGroupName)
 			continue
 		}
 
@@ -117,11 +118,11 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					log.Printf("[DEBUG] Would have deleted %s", volumeIdForReplication)
 				} else {
 					if _, err := netAppVolumeReplicationClient.VolumesDeleteReplication(ctx, *volumeIdForReplication); err != nil {
-						log.Printf("[ERROR] Failed to delete volume replication %s: %+v", volumeIdForReplication, err)
+						log.Printf(color.RedString("[ERROR] Failed to delete volume replication %s: %+v", volumeIdForReplication, err))
 						nestedResourceFailed = true
 						break
 					}
-					log.Printf("[DEBUG] Deleted replication for %s", volumeIdForReplication)
+					log.Printf(color.GreenString("[DEBUG] Deleted replication for %s", volumeIdForReplication))
 				}
 
 				if !opts.ActuallyDelete {
@@ -129,18 +130,18 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				} else {
 					forceDelete := true
 					if _, err := netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
-						log.Printf("[ERROR] Failed to delete volume %s: %+v", volumeId, err)
+						log.Printf(color.RedString("[ERROR] Failed to delete volume %s: %+v", volumeId, err))
 						nestedResourceFailed = true
 						break
 					}
 					time.Sleep(waitSecondsAfterDeletion)
 					vol, err := netAppVolumeClient.Get(ctx, *volumeId)
 					if err == nil && vol.Model != nil {
-						log.Printf("[ERROR] %s still exists after delete attempt.", volumeId)
+						log.Printf(color.RedString("[ERROR] %s still exists after delete attempt.", volumeId))
 						nestedResourceFailed = true
 						break
 					}
-					log.Printf("[DEBUG] Deleted %s", volumeId)
+					log.Printf(color.GreenString("[DEBUG] Deleted %s", volumeId))
 				}
 			}
 
@@ -157,7 +158,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				log.Printf("[DEBUG] Would have deleted %s", capacityPoolId)
 			} else {
 				if _, err := netAppCapacityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
-					log.Printf("[ERROR] Failed to delete capacity pool %s: %+v", capacityPoolId, err)
+					log.Printf(color.RedString("[ERROR] Failed to delete capacity pool %s: %+v", capacityPoolId, err))
 					nestedResourceFailed = true
 					break
 				}
@@ -166,13 +167,13 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				if err == nil {
 					for _, pool := range poolList.Items {
 						if pool.Id != nil && *pool.Id == capacityPoolId.String() {
-							log.Printf("[ERROR] Capacity pool %s still exists after delete attempt.", capacityPoolId.String())
+							log.Printf(color.RedString("[ERROR] Capacity pool %s still exists after delete attempt.", capacityPoolId.String()))
 							nestedResourceFailed = true
 							break
 						}
 					}
 				}
-				log.Printf("[DEBUG] Deleted %s", capacityPoolId)
+				log.Printf(color.GreenString("[DEBUG] Deleted %s", capacityPoolId))
 			}
 
 			if nestedResourceFailed {
@@ -234,18 +235,18 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					continue
 				} else {
 					if _, err := netAppBackupsClient.Delete(ctx, *backupId); err != nil {
-						log.Printf("[ERROR] Failed to delete backup %s: %+v", backupId.String(), err)
+						log.Printf(color.RedString("[ERROR] Failed to delete backup %s: %+v", backupId.String(), err))
 						nestedResourceFailed = true
 						break
 					}
 					time.Sleep(waitSecondsAfterDeletion)
 					b, err := netAppBackupsClient.Get(ctx, *backupId)
 					if err == nil && b.Model != nil {
-						log.Printf("[ERROR] %s still exists after delete attempt.", backupId.String())
+						log.Printf(color.RedString("[ERROR] %s still exists after delete attempt.", backupId.String()))
 						nestedResourceFailed = true
 						break
 					}
-					log.Printf("[DEBUG] Deleted %s", backupId)
+					log.Printf(color.GreenString("[DEBUG] Deleted %s", backupId))
 				}
 			}
 			if nestedResourceFailed {
@@ -256,7 +257,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				log.Printf("[DEBUG] Would have deleted %s", vaultIdForBackup.String())
 			} else {
 				if _, err := netAppBackupVaultsClient.Delete(ctx, *vaultIdForBackup); err != nil {
-					log.Printf("[ERROR] Failed to delete backup vault %s: %+v", vaultIdForBackup.String(), err)
+					log.Printf(color.RedString("[ERROR] Failed to delete backup vault %s: %+v", vaultIdForBackup.String(), err))
 					nestedResourceFailed = true
 					break
 				}
@@ -265,13 +266,13 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				if err == nil {
 					for _, v := range vaultsList.Items {
 						if v.Id != nil && *v.Id == vaultIdForBackup.String() {
-							log.Printf("[ERROR] Backup vault %s still exists after delete attempt.", vaultIdForBackup.String())
+							log.Printf(color.RedString("[ERROR] Backup vault %s still exists after delete attempt.", vaultIdForBackup.String()))
 							nestedResourceFailed = true
 							break
 						}
 					}
 				}
-				log.Printf("[DEBUG] Deleted %s", vaultIdForBackup)
+				log.Printf(color.GreenString("[DEBUG] Deleted %s", vaultIdForBackup))
 			}
 		}
 		if nestedResourceFailed {
@@ -301,9 +302,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					}
 				}
 			}
-			log.Printf("[DEBUG] Deleted %s", accountId)
+			log.Printf(color.HiGreenString("[DEBUG] Deleted %s", accountId))
 		}
 	}
-
 	return nil
 }
