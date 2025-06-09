@@ -53,7 +53,7 @@ github.com/hashicorp/go-azure-helpers/resourcemanager/recaser
 github.com/hashicorp/go-azure-helpers/resourcemanager/resourceids
 github.com/hashicorp/go-azure-helpers/resourcemanager/systemdata
 github.com/hashicorp/go-azure-helpers/resourcemanager/zones
-# github.com/hashicorp/go-azure-sdk/resource-manager v0.20250520.1180806
+# github.com/hashicorp/go-azure-sdk/resource-manager v0.20250526.1224007
 ## explicit; go 1.22
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/azurebackupjob
@@ -81,6 +81,7 @@ github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/snapshots
 github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors
 github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces
 github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29
@@ -119,7 +120,7 @@ github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource
-# github.com/hashicorp/go-azure-sdk/sdk v0.20250520.1180806
+# github.com/hashicorp/go-azure-sdk/sdk v0.20250526.1224007
 ## explicit; go 1.22
 github.com/hashicorp/go-azure-sdk/sdk/auth
 github.com/hashicorp/go-azure-sdk/sdk/auth/autorest

@@ -45,7 +45,7 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 		}
 
 		if !strings.HasPrefix(strings.ToLower(vaultId.ResourceGroupName), strings.ToLower(opts.Prefix)) {
-			log.Printf("[DEBUG]  Resource Group \"%s\" shouldn't be deleted - Skipping..", vaultId.ResourceGroupName)
+			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", vaultId.ResourceGroupName, opts.Prefix)
 			continue
 		}
 

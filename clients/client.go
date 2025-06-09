@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/snapshots"
 	"strings"
 
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
@@ -63,6 +64,7 @@ type ResourceManagerClient struct {
 	NetAppBackupsClient                        *backups.BackupsClient
 	NetAppCapacityPoolClient                   *capacitypools.CapacityPoolsClient
 	NetAppVolumeClient                         *volumes.VolumesClient
+	NetAppSnapshotClient                       *snapshots.SnapshotsClient
 	NetAppVolumeReplicationClient              *volumesreplication.VolumesReplicationClient
 	NewRelicMonitorClient                      *monitors.MonitorsClient
 	NotificationHubNamespaceClient             *namespaces.NamespacesClient
@@ -186,7 +188,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	if !ok {
 		return nil, fmt.Errorf("environment %q was missing a Resource Manager endpoint", environment.Name)
 	}
-
 	dataProtectionClient, err := dataProtection.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
 		c.Authorizer = resourceManagerAuthorizer
 	})
@@ -259,6 +260,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		return nil, fmt.Errorf("building NetApp Volume Client: %+v", err)
 	}
 	netAppVolumeClient.Client.Authorizer = resourceManagerAuthorizer
+
+	netAppSnapshotClient, err := snapshots.NewSnapshotsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building NetApp Volume Client: %+v", err)
+	}
+	netAppSnapshotClient.Client.Authorizer = resourceManagerAuthorizer
 
 	netAppVolumeReplicationClient, err := volumesreplication.NewVolumesReplicationClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
@@ -354,6 +361,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		NetAppCapacityPoolClient:                   netAppCapacityPoolClient,
 		NetAppVolumeClient:                         netAppVolumeClient,
 		NetAppVolumeReplicationClient:              netAppVolumeReplicationClient,
+		NetAppSnapshotClient:                       netAppSnapshotClient,
 		NewRelicMonitorClient:                      newRelicMonitorClient,
 		NotificationHubNamespaceClient:             notificationHubNamespacesClient,
 		PaloAlto:                                   paloAltoClient,

@@ -3,9 +3,10 @@ module github.com/jackofallops/azurerm-dalek
 go 1.23
 
 require (
+	github.com/fatih/color v1.18.0
 	github.com/hashicorp/go-azure-helpers v0.71.0
-	github.com/hashicorp/go-azure-sdk/resource-manager v0.20250520.1180806
-	github.com/hashicorp/go-azure-sdk/sdk v0.20250520.1180806
+	github.com/hashicorp/go-azure-sdk/resource-manager v0.20250526.1224007
+	github.com/hashicorp/go-azure-sdk/sdk v0.20250526.1224007
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/manicminer/hamilton v0.66.0
 )
@@ -19,7 +20,6 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect

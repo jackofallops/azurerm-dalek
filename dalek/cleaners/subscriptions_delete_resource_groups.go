@@ -47,7 +47,7 @@ func (d deleteResourceGroupsInSubscriptionCleaner) Cleanup(ctx context.Context, 
 			continue
 		}
 		if !shouldDeleteResourceGroup(resource, opts.Prefix) {
-			log.Printf("[DEBUG] Resource Group %q shouldn't be deleted - Skipping..", *resource.Name)
+			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", resource.Name, opts.Prefix)
 			continue
 		}
 
