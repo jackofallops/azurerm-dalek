@@ -3,11 +3,11 @@ package cleaners
 import (
 	"context"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools"
@@ -83,11 +83,11 @@ func deepDeleteNetAppAccount(ctx context.Context, id string, subscriptionId comm
 		if err == nil && acctList.Model != nil {
 			for _, acct := range *acctList.Model {
 				if acct.Id != nil && *acct.Id == accountId.String() {
-					return fmt.Errorf("[ERROR] NetApp account %s still exists after delete attempt.", accountId.String())
+					return fmt.Errorf("[ERROR] NetApp account %s still exists after delete attempt", accountId.String())
 				}
 			}
 		}
-		log.Printf(color.HiGreenString("[DEBUG] Deleted %s", accountId))
+		log.Printf("[DEBUG] Deleted %s", accountId)
 	}
 	return nil
 }
@@ -97,7 +97,7 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 	accountIdForCapacityPool, _ := capacitypools.ParseNetAppAccountID(accountId)
 	capacityPoolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
 	if err != nil {
-		return fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool)
+		return fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err)
 	}
 
 	log.Printf("Found %d NetApp Capacity Pools", len(capacityPoolList.Items))
@@ -126,7 +126,7 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 			if err == nil {
 				for _, pool := range poolList.Items {
 					if pool.Id != nil && *pool.Id == capacityPoolId.String() {
-						return fmt.Errorf("[ERROR] Capacity pool %s still exists after delete attempt.", capacityPoolId.String())
+						return fmt.Errorf("[ERROR] Capacity pool %s still exists after delete attempt", capacityPoolId.String())
 					}
 				}
 			}
@@ -188,7 +188,7 @@ func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.Azure
 			time.Sleep(waitSecondsAfterDeletion)
 			vol, err := netAppVolumeClient.Get(ctx, *volumeId)
 			if err == nil && vol.Model != nil {
-				return fmt.Errorf("[ERROR] %s still exists after delete attempt.", volumeId)
+				return fmt.Errorf("[ERROR] %s still exists after delete attempt", volumeId)
 			}
 			log.Printf("[DEBUG] Deleted %s", volumeId)
 		}
@@ -238,7 +238,7 @@ func deepDeleteBackupVaults(ctx context.Context, id string, client *clients.Azur
 			} else {
 				for _, v := range vaultsList.Items {
 					if v.Id != nil && *v.Id == vaultIdForBackup.String() {
-						return fmt.Errorf("[ERROR] Backup vault %s still exists after delete attempt.", vaultIdForBackup.String())
+						return fmt.Errorf("[ERROR] Backup vault %s still exists after delete attempt", vaultIdForBackup.String())
 					}
 				}
 			}
@@ -328,7 +328,7 @@ func deleteBackups(ctx context.Context, vaultId string, client *clients.AzureCli
 			time.Sleep(waitSecondsAfterDeletion)
 			b, err := netAppBackupsClient.Get(ctx, *backupId)
 			if err == nil && b.Model != nil {
-				return fmt.Errorf("[ERROR] %s still exists after delete attempt.", backupId.String())
+				return fmt.Errorf("[ERROR] %s still exists after delete attempt", backupId.String())
 			}
 			log.Printf("[DEBUG] Deleted %s", backupId)
 		}
