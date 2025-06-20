@@ -3,8 +3,10 @@ package clients
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/snapshots"
 	"strings"
+
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backuppolicy"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/snapshots"
 
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
@@ -12,12 +14,12 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/keyvault/2023-07-01/managedhsms"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2024-10-01/workspaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/capacitypools"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/netappaccounts"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/volumes"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/volumesreplication"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
@@ -61,6 +63,7 @@ type ResourceManagerClient struct {
 	ManagementClient                           *managementgroups.ManagementGroupsClient
 	NetAppAccountClient                        *netappaccounts.NetAppAccountsClient
 	NetAppBackupVaultsClient                   *backupvaults.BackupVaultsClient
+	NetAppBackupPolicyClient                   *backuppolicy.BackupPolicyClient
 	NetAppBackupsClient                        *backups.BackupsClient
 	NetAppCapacityPoolClient                   *capacitypools.CapacityPoolsClient
 	NetAppVolumeClient                         *volumes.VolumesClient
@@ -104,7 +107,7 @@ func BuildAzureClient(ctx context.Context, credentials Credentials) (*AzureClien
 		EnableAuthenticatingUsingClientSecret: true,
 	}
 
-	resourceManager, err := buildResourceManagerClient(ctx, creds, *environment, credentials.SubscriptionID)
+	resourceManager, err := buildResourceManagerClient(ctx, creds, *environment)
 	if err != nil {
 		return nil, fmt.Errorf("building Resource Manager client: %+v", err)
 	}
@@ -176,7 +179,7 @@ func buildMicrosoftGraphClient(ctx context.Context, creds auth.Credentials, envi
 	}, nil
 }
 
-func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, environment environments.Environment, subscriptionId string) (*ResourceManagerClient, error) {
+func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, environment environments.Environment) (*ResourceManagerClient, error) {
 	resourceManagerAuthorizer, err := auth.NewAuthorizerFromCredentials(ctx, creds, environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building Resource Manager authorizer: %+v", err)
@@ -249,6 +252,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	netAppBackupsClient.Client.Authorizer = resourceManagerAuthorizer
 
+	netAppBackupPolicyClient, err := backuppolicy.NewBackupPolicyClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building NetApp Backup Policy Client: %+v", err)
+	}
+	netAppBackupPolicyClient.Client.Authorizer = resourceManagerAuthorizer
+
 	netAppCapacityPoolClient, err := capacitypools.NewCapacityPoolsClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building NetApp Capacity Pool Client: %+v", err)
@@ -299,15 +308,9 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	recoveryServicesVaultClient.Client.Authorizer = resourceManagerAuthorizer
 
 	recoveryServicesProtectedItemClient := protecteditems.NewProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("building Recovery Services Protected Item client: %+v", err)
-	}
 	recoveryServicesProtectedItemClient.Client.Authorizer = autoRestAuthorizer
 
 	recoveryServicesBackupProtectedItemsClient := backupprotecteditems.NewBackupProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("building Recovery Services Backup Protected Items client: %+v", err)
-	}
 	recoveryServicesBackupProtectedItemsClient.Client.Authorizer = autoRestAuthorizer
 
 	resourceGraphClient, err := resourceGraph.NewResourcesClientWithBaseURI(environment.ResourceManager)
@@ -358,6 +361,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		NetAppAccountClient:                        netAppAccountClient,
 		NetAppBackupVaultsClient:                   netAppBackupVaultsClient,
 		NetAppBackupsClient:                        netAppBackupsClient,
+		NetAppBackupPolicyClient:                   netAppBackupPolicyClient,
 		NetAppCapacityPoolClient:                   netAppCapacityPoolClient,
 		NetAppVolumeClient:                         netAppVolumeClient,
 		NetAppVolumeReplicationClient:              netAppVolumeReplicationClient,

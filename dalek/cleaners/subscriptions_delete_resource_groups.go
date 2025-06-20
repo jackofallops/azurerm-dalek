@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strings"
 
@@ -46,8 +47,8 @@ func (d deleteResourceGroupsInSubscriptionCleaner) Cleanup(ctx context.Context, 
 			log.Printf("[DEBUG] Resource Group %q is already being deleted - Skipping..", *resource.Name)
 			continue
 		}
-		if !shouldDeleteResourceGroup(resource, opts.Prefix) {
-			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", resource.Name, opts.Prefix)
+		if !shouldDeleteResourceGroup(resource, opts.Prefix) && os.Getenv("DALEK_DEBUG") != "false" {
+			log.Printf("[DEBUG] Not deleting %s as it does not match target RG prefix %q", *resource.Name, opts.Prefix)
 			continue
 		}
 
@@ -62,6 +63,10 @@ func (d deleteResourceGroupsInSubscriptionCleaner) Cleanup(ctx context.Context, 
 	}
 
 	for _, groupName := range resourceGroups {
+		if !strings.HasPrefix(strings.ToLower(groupName), strings.ToLower(opts.Prefix)) {
+			return nil
+		}
+
 		log.Printf("[DEBUG] Resource Group: %q", groupName)
 
 		id := commonids.NewResourceGroupID(subscriptionId.SubscriptionId, groupName)

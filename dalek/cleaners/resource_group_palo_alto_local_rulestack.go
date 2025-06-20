@@ -69,7 +69,7 @@ func (paloAltoLocalRulestackCleaner) Cleanup(ctx context.Context, id commonids.R
 			}
 		}
 		if _, err := rulestacksClient.Commit(ctx, localrulestacks.NewLocalRulestackID(rulestackId.SubscriptionId, rulestackId.ResourceGroupName, rulestackId.LocalRulestackName)); err != nil {
-			return fmt.Errorf("failed to commit changes to %s cannot delete, support ticket may be required to remove resource")
+			return fmt.Errorf("failed to commit changes to %s cannot delete, support ticket may be required to remove resource", rulestackId)
 		}
 	}
 
@@ -109,7 +109,7 @@ func (paloAltoLocalRulestackCleaner) Cleanup(ctx context.Context, id commonids.R
 			}
 		}
 		if _, err := rulestacksClient.Commit(ctx, localrulestacks.NewLocalRulestackID(rulestackId.SubscriptionId, rulestackId.ResourceGroupName, rulestackId.LocalRulestackName)); err != nil {
-			return fmt.Errorf("failed to commit changes to %s cannot delete, support ticket may be required to remove resource")
+			return fmt.Errorf("failed to commit changes to %s cannot delete, support ticket may be required to remove resource", rulestackId)
 		}
 	}
 
@@ -155,7 +155,7 @@ func (paloAltoLocalRulestackCleaner) Cleanup(ctx context.Context, id commonids.R
 			}
 		}
 		if _, err := rulestacksClient.Commit(ctx, localrulestacks.NewLocalRulestackID(rulestackId.SubscriptionId, rulestackId.ResourceGroupName, rulestackId.LocalRulestackName)); err != nil {
-			return fmt.Errorf("failed to commit changes to %s cannot delete, support ticket may be required to remove resource")
+			return fmt.Errorf("failed to commit changes to %s cannot delete, support ticket may be required to remove resource", rulestackId)
 		}
 	}
 

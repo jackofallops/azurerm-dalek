@@ -2,33 +2,35 @@ package cleaners
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
-
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backuppolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/capacitypools"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/snapshots"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/volumes"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/sdk/client"
+	"github.com/hashicorp/go-azure-sdk/sdk/client/pollers"
+	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
+	"github.com/hashicorp/go-azure-sdk/sdk/odata"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
 
-// TODO when there is a way to check the long-running operation status URL on delete operations (not possible in current
-// version of SDK), the resource-still-exists error messages will be able to include why deletes fail, or even better,
-// can inform how to modify the Dalek to preemptively eliminate deletion blockers.
-
 type deleteNetAppSubscriptionCleaner struct{}
 
 var _ SubscriptionCleaner = deleteNetAppSubscriptionCleaner{}
-var waitSecondsAfterDeletion = 60 * time.Second
 
 func (p deleteNetAppSubscriptionCleaner) Name() string {
 	return "Removing Net App"
@@ -78,7 +80,6 @@ func deepDeleteNetAppAccount(ctx context.Context, id string, subscriptionId comm
 		if _, err := netAppAccountClient.AccountsDelete(ctx, *accountId); err != nil {
 			return err
 		}
-		time.Sleep(waitSecondsAfterDeletion)
 		acctList, err := netAppAccountClient.AccountsListBySubscription(ctx, subscriptionId)
 		if err == nil && acctList.Model != nil {
 			for _, acct := range *acctList.Model {
@@ -100,7 +101,7 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 		return fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err)
 	}
 
-	log.Printf("Found %d NetApp Capacity Pools", len(capacityPoolList.Items))
+	log.Printf("[DEBUG] Found %d NetApp Capacity Pools", len(capacityPoolList.Items))
 	for _, capacityPool := range capacityPoolList.Items {
 		if capacityPool.Id == nil {
 			continue
@@ -121,7 +122,6 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 			if _, err := netAppCapacityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
 				return err
 			}
-			time.Sleep(waitSecondsAfterDeletion)
 			poolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
 			if err == nil {
 				for _, pool := range poolList.Items {
@@ -148,7 +148,7 @@ func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.Azure
 		return fmt.Errorf("listing NetApp Volumes for %s: %+v", capacityPoolForVolumesId, err)
 	}
 
-	log.Printf("Found %d NetApp Volumes", len(volumeList.Items))
+	log.Printf("[DEBUG] Found %d NetApp Volumes", len(volumeList.Items))
 	for _, volume := range volumeList.Items {
 		if volume.Id == nil {
 			continue
@@ -182,10 +182,14 @@ func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.Azure
 			log.Printf("[DEBUG] Would have deleted %s", volumeId)
 		} else {
 			forceDelete := true
-			if _, err := netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
+			if response, err := netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
 				return err
+			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: netAppVolumeClient.Client}, response.HttpResponse); pollerType != nil {
+				poller := pollers.NewPoller(pollerType, 0, 10)
+				if err := poller.PollUntilDone(ctx); err != nil {
+					return fmt.Errorf("polling delete operation for %s: %+v", volumeId, err)
+				}
 			}
-			time.Sleep(waitSecondsAfterDeletion)
 			vol, err := netAppVolumeClient.Get(ctx, *volumeId)
 			if err == nil && vol.Model != nil {
 				return fmt.Errorf("[ERROR] %s still exists after delete attempt", volumeId)
@@ -196,8 +200,8 @@ func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.Azure
 	return nil
 }
 
-func deepDeleteBackupVaults(ctx context.Context, id string, client *clients.AzureClient, opts options.Options) error {
-	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(id)
+func deepDeleteBackupVaults(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(accountId)
 	if err != nil {
 		return fmt.Errorf("[ERROR] Unable to parse NetApp Account ID for Backup Vaults: %+v", err)
 	}
@@ -208,12 +212,13 @@ func deepDeleteBackupVaults(ctx context.Context, id string, client *clients.Azur
 		return fmt.Errorf("listing NetApp Backup Vaults for %s: %+v", accountIdForBackupVault, err)
 	}
 
+	log.Printf("[DEBUG] Found %d NetApp Backup Vaults", len(backupVaultsList.Items))
 	for _, vault := range backupVaultsList.Items {
 		if vault.Id == nil {
 			continue
 		}
 
-		if err := deleteBackupPolicies(ctx, *vault.Id, client, opts); err != nil {
+		if err := deleteBackupPolicies(ctx, accountId, client, opts); err != nil {
 			return err
 		}
 
@@ -221,17 +226,21 @@ func deepDeleteBackupVaults(ctx context.Context, id string, client *clients.Azur
 			return err
 		}
 
+		vaultIdForBackup, err := backupvaults.ParseBackupVaultID(*vault.Id)
+		if err != nil {
+			return err
+		}
 		if !opts.ActuallyDelete {
-			log.Printf("[DEBUG] Would have deleted %s", *vault.Id)
+			log.Printf("[DEBUG] Would have deleted %s", vaultIdForBackup)
 		} else {
-			vaultIdForBackup, err := backupvaults.ParseBackupVaultID(*vault.Id)
-			if err != nil {
+			if response, err := netAppBackupVaultsClient.Delete(ctx, *vaultIdForBackup); err != nil {
 				return err
+			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: netAppBackupVaultsClient.Client}, response.HttpResponse); pollerType != nil {
+				poller := pollers.NewPoller(pollerType, 0, 10)
+				if err := poller.PollUntilDone(ctx); err != nil {
+					return fmt.Errorf("polling delete operation for %s: %+v", vaultIdForBackup, err)
+				}
 			}
-			if _, err := netAppBackupVaultsClient.Delete(ctx, *vaultIdForBackup); err != nil {
-				return err
-			}
-			time.Sleep(waitSecondsAfterDeletion)
 			vaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
 			if err != nil {
 				return fmt.Errorf("listing NetApp Backup Vaults after deletion for %s: %+v", accountIdForBackupVault, err)
@@ -248,7 +257,69 @@ func deepDeleteBackupVaults(ctx context.Context, id string, client *clients.Azur
 	return nil
 }
 
-func deleteBackupPolicies(ctx context.Context, vaultId string, client *clients.AzureClient, opts options.Options) error {
+func deleteBackupPolicies(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+	backupsPolicyClient := client.ResourceManager.NetAppBackupPolicyClient
+	accountIdForBackupPolicy, err := backuppolicy.ParseNetAppAccountID(accountId)
+	if err != nil {
+		return fmt.Errorf("parsing NetApp Account ID for Backup Policies: %+v", err)
+	}
+	backupPoliciesList, err := backupsPolicyClient.BackupPoliciesList(ctx, *accountIdForBackupPolicy)
+	if err != nil {
+		return fmt.Errorf("listing NetApp Backup Policies for %s: %+v", accountId, err)
+	}
+
+	log.Printf("[DEBUG] Found %d NetApp Backup Policies", len(*backupPoliciesList.Model.Value))
+	for _, policy := range *backupPoliciesList.Model.Value {
+		if policy.Id == nil {
+			continue
+		}
+		policyId, err := backuppolicy.ParseBackupPolicyID(*policy.Id)
+		if err != nil {
+			return fmt.Errorf("parsing Backup Policy ID %s: %+v", *policy.Id, err)
+		}
+		if !opts.ActuallyDelete {
+			log.Printf("[DEBUG] Would have deleted %s", policyId)
+			continue
+		} else {
+			if pointer.From(policy.Properties.VolumesAssigned) > 0 {
+				log.Printf("[DEBUG] Detaching %d volumes from Backup Policy %s", pointer.From(policy.Properties.VolumesAssigned), policyId)
+				volumesClient := client.ResourceManager.NetAppVolumeClient
+				for _, volume := range *policy.Properties.VolumeBackups {
+					log.Printf("[DEBUG] Detaching volume %s from Backup Policy %s", *volume.VolumeResourceId, policyId)
+					if volumeId, err := volumes.ParseVolumeID(*volume.VolumeResourceId); err != nil {
+						return fmt.Errorf("parsing Volume ID %s: %+v", *volume.VolumeResourceId, err)
+					} else {
+						volumesClient.UpdateThenPoll(ctx, *volumeId, volumes.VolumePatch{
+							Properties: &volumes.VolumePatchProperties{
+								DataProtection: &volumes.VolumePatchPropertiesDataProtection{
+									Backup: &volumes.VolumeBackupProperties{
+										BackupPolicyId: pointer.To(""),
+									},
+								},
+							},
+						})
+						log.Printf("[DEBUG] Detached volume %s from Backup Policy %s", *volume.VolumeResourceId, policyId)
+					}
+				}
+				time.Sleep(10 * time.Second) // Wait for the detach operation to complete
+			}
+
+			if response, err := backupsPolicyClient.BackupPoliciesDelete(ctx, *policyId); err != nil {
+				return err
+			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: backupsPolicyClient.Client}, response.HttpResponse); pollerType != nil {
+				poller := pollers.NewPoller(pollerType, 0, 10)
+				if err := poller.PollUntilDone(ctx); err != nil {
+					return fmt.Errorf("polling delete operation for %s: %+v", policyId, err)
+				}
+			}
+			if b, err := backupsPolicyClient.BackupPoliciesGet(ctx, *policyId); err != nil {
+				return err
+			} else if b.Model != nil {
+				return fmt.Errorf("[ERROR] %s still exists after delete attempt", policyId.String())
+			}
+			log.Printf("[DEBUG] Deleted %s", policyId)
+		}
+	}
 	return nil
 }
 
@@ -269,7 +340,7 @@ func deleteSnapshots(ctx context.Context, volumeId string, client *clients.Azure
 	if resp.Model.Value == nil {
 		return fmt.Errorf("listing NetApp Snapshots for %s: value was nil", volumeIdForSnapshots)
 	}
-	log.Printf("Found %d NetApp Snapshots", len(*resp.Model.Value))
+	log.Printf("[DEBUG] Found %d NetApp Snapshots", len(*resp.Model.Value))
 	for _, snapshot := range *resp.Model.Value {
 		if snapshot.Id == nil {
 			continue
@@ -282,18 +353,16 @@ func deleteSnapshots(ctx context.Context, volumeId string, client *clients.Azure
 			log.Printf("[DEBUG] Would have deleted %s", snapshotID.String())
 			continue
 		} else {
-			if _, err := snapshotClient.Delete(ctx, *snapshotID); err != nil {
+			if response, err := snapshotClient.Delete(ctx, *snapshotID); err != nil {
 				return err
-			} else {
-				time.Sleep(waitSecondsAfterDeletion)
-				if b, err := snapshotClient.Get(ctx, *snapshotID); err != nil {
-					return err
-				} else if b.Model != nil {
-					return fmt.Errorf("[ERROR] %s still exists after delete attempt. The long-running operation status URL might have more information", snapshotID.String())
+			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: snapshotClient.Client}, response.HttpResponse); pollerType != nil {
+				poller := pollers.NewPoller(pollerType, 0, 10)
+				if err := poller.PollUntilDone(ctx); err != nil {
+					return fmt.Errorf("polling delete operation for %s: %+v", snapshotID, err)
 				}
-				log.Printf("[DEBUG] Deleted %s", snapshotID)
 			}
 		}
+		log.Printf("[DEBUG] Deleted %s", snapshotID)
 	}
 	return nil
 }
@@ -309,7 +378,7 @@ func deleteBackups(ctx context.Context, vaultId string, client *clients.AzureCli
 	if err != nil {
 		return err
 	}
-	log.Printf("Found %d NetApp Backups", len(backupsList.Items))
+	log.Printf("[DEBUG] Found %d NetApp Backups", len(backupsList.Items))
 	for _, backup := range backupsList.Items {
 		if backup.Id == nil {
 			continue
@@ -322,10 +391,14 @@ func deleteBackups(ctx context.Context, vaultId string, client *clients.AzureCli
 			log.Printf("[DEBUG] Would have deleted %s", backupId.String())
 			continue
 		} else {
-			if _, err := netAppBackupsClient.Delete(ctx, *backupId); err != nil {
+			if response, err := netAppBackupsClient.Delete(ctx, *backupId); err != nil {
 				return err
+			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: netAppBackupsClient.Client}, response.HttpResponse); pollerType != nil {
+				poller := pollers.NewPoller(pollerType, 0, 10)
+				if err := poller.PollUntilDone(ctx); err != nil {
+					return fmt.Errorf("polling delete operation for %s: %+v", backupId, err)
+				}
 			}
-			time.Sleep(waitSecondsAfterDeletion)
 			b, err := netAppBackupsClient.Get(ctx, *backupId)
 			if err == nil && b.Model != nil {
 				return fmt.Errorf("[ERROR] %s still exists after delete attempt", backupId.String())
@@ -334,4 +407,143 @@ func deleteBackups(ctx context.Context, vaultId string, client *clients.AzureCli
 		}
 	}
 	return nil
+}
+
+var _ pollers.PollerType = &netappLROPoller{}
+
+type netappLROPoller struct {
+	client              LROClient
+	azureAsyncOperation string
+}
+
+var (
+	pollingSuccess = pollers.PollResult{
+		Status:       pollers.PollingStatusSucceeded,
+		PollInterval: 10 * time.Second,
+	}
+	pollingInProgress = pollers.PollResult{
+		Status:       pollers.PollingStatusInProgress,
+		PollInterval: 10 * time.Second,
+	}
+)
+
+// LROClient is an interface for clients that can be used with the generic LROPoller.
+type LROClient interface {
+	NewRequest(ctx context.Context, opts client.RequestOptions) (*http.Request, error)
+	Execute(ctx context.Context, req *http.Request) (*http.Response, error)
+}
+
+// NewLROPoller - creates a new poller for NetApp deletions or any resource type that supports Azure-AsyncOperation polling.
+func NewLROPoller(client LROClient, response *http.Response) *netappLROPoller {
+	if urlStr := response.Header.Get("Azure-AsyncOperation"); urlStr != "" {
+		return &netappLROPoller{
+			client:              client,
+			azureAsyncOperation: urlStr,
+		}
+	}
+	return nil
+}
+
+type myOptions struct {
+	azureAsyncOperation string
+}
+
+func (p myOptions) ToHeaders() *client.Headers {
+	return &client.Headers{}
+}
+
+func (p myOptions) ToOData() *odata.Query {
+	return &odata.Query{}
+}
+
+func (p myOptions) ToQuery() *client.QueryParams {
+	u, err := url.Parse(p.azureAsyncOperation)
+	if err != nil {
+		log.Printf("[ERROR] Unable to parse Azure-AsyncOperation URL: %v", err)
+		return nil
+	}
+	q := client.QueryParams{}
+	for k, v := range u.Query() {
+		if len(v) > 0 {
+			q.Append(k, v[0])
+		}
+	}
+	return &q
+}
+
+func (p netappLROPoller) Poll(ctx context.Context) (*pollers.PollResult, error) {
+	if p.azureAsyncOperation == "" {
+		return &pollingSuccess, nil
+	}
+	p.azureAsyncOperation = strings.Replace(p.azureAsyncOperation, "https://management.azure.com/", "", 1)
+	var _ client.Options = myOptions{}
+	opts := client.RequestOptions{
+		ContentType: "application/json; charset=utf-8",
+		ExpectedStatusCodes: []int{
+			http.StatusOK,
+			http.StatusAccepted,
+		},
+		HttpMethod: http.MethodGet,
+		Path:       p.azureAsyncOperation,
+		OptionsObject: myOptions{
+			azureAsyncOperation: p.azureAsyncOperation,
+		},
+	}
+	req, err := p.client.NewRequest(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("building request: %+v", err)
+	}
+	resp, err := p.client.Execute(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("getting status: %+v", err)
+	}
+	var respBody pollingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		return nil, fmt.Errorf("decoding response body: %+v", err)
+	}
+	if respBody.Status == "Failed" {
+		return nil, pollers.PollingFailedError{
+			Message: respBody.Error.Message,
+		}
+	}
+	// TODO handle other statuses once we know what they are.
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return &pollingSuccess, nil
+	case http.StatusAccepted:
+		return &pollingInProgress, nil
+	}
+
+	return nil, fmt.Errorf("unexpected status code %d. Response body: %s", resp.StatusCode, resp.Body)
+}
+
+type pollingResponse struct {
+	Status string `json:"status"`
+	Error  struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// lroClientAdapter adapts a *resourcemanager.Client to the LROClient interface expected by the poller.
+type lroClientAdapter struct {
+	inner *resourcemanager.Client
+}
+
+func (a *lroClientAdapter) NewRequest(ctx context.Context, opts client.RequestOptions) (*http.Request, error) {
+	cReq, err := a.inner.NewRequest(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return cReq.Request, nil
+}
+
+func (a *lroClientAdapter) Execute(ctx context.Context, req *http.Request) (*http.Response, error) {
+	// Wrap the http.Request in a client.Request
+	cReq := &client.Request{Request: req, Client: a.inner}
+	resp, err := a.inner.Client.Execute(ctx, cReq)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Response, nil
 }

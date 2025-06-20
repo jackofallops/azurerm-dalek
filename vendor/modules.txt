@@ -1,21 +1,21 @@
 # github.com/Azure/go-autorest v14.2.0+incompatible
 ## explicit
 github.com/Azure/go-autorest
-# github.com/Azure/go-autorest/autorest v0.11.29
+# github.com/Azure/go-autorest/autorest v0.11.30
 ## explicit; go 1.15
 github.com/Azure/go-autorest/autorest
 github.com/Azure/go-autorest/autorest/azure
 # github.com/Azure/go-autorest/autorest/adal v0.9.24
 ## explicit; go 1.15
 github.com/Azure/go-autorest/autorest/adal
-# github.com/Azure/go-autorest/autorest/date v0.3.0
-## explicit; go 1.12
+# github.com/Azure/go-autorest/autorest/date v0.3.1
+## explicit; go 1.15
 github.com/Azure/go-autorest/autorest/date
-# github.com/Azure/go-autorest/logger v0.2.1
-## explicit; go 1.12
+# github.com/Azure/go-autorest/logger v0.2.2
+## explicit; go 1.15
 github.com/Azure/go-autorest/logger
-# github.com/Azure/go-autorest/tracing v0.6.0
-## explicit; go 1.12
+# github.com/Azure/go-autorest/tracing v0.6.1
+## explicit; go 1.15
 github.com/Azure/go-autorest/tracing
 # github.com/agext/levenshtein v1.2.3
 ## explicit
@@ -32,15 +32,15 @@ github.com/golang-jwt/jwt/v4
 # github.com/golang/protobuf v1.5.4
 ## explicit; go 1.17
 github.com/golang/protobuf/proto
-# github.com/google/go-cmp v0.6.0
-## explicit; go 1.13
+# github.com/google/go-cmp v0.7.0
+## explicit; go 1.21
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/hashicorp/go-azure-helpers v0.71.0
-## explicit; go 1.21
+# github.com/hashicorp/go-azure-helpers v0.73.0
+## explicit; go 1.24.1
 github.com/hashicorp/go-azure-helpers/lang/dates
 github.com/hashicorp/go-azure-helpers/lang/pointer
 github.com/hashicorp/go-azure-helpers/lang/response
@@ -53,8 +53,8 @@ github.com/hashicorp/go-azure-helpers/resourcemanager/recaser
 github.com/hashicorp/go-azure-helpers/resourcemanager/resourceids
 github.com/hashicorp/go-azure-helpers/resourcemanager/systemdata
 github.com/hashicorp/go-azure-helpers/resourcemanager/zones
-# github.com/hashicorp/go-azure-sdk/resource-manager v0.20250526.1224007
-## explicit; go 1.22
+# github.com/hashicorp/go-azure-sdk/resource-manager v0.20250618.1093309
+## explicit; go 1.24.1
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/azurebackupjob
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/azurebackupjobs
@@ -79,9 +79,14 @@ github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypoo
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backuppolicy
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/capacitypools
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/netappaccounts
 github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/snapshots
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/volumes
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/volumesreplication
 github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors
 github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces
 github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29
@@ -120,8 +125,8 @@ github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource
-# github.com/hashicorp/go-azure-sdk/sdk v0.20250526.1224007
-## explicit; go 1.22
+# github.com/hashicorp/go-azure-sdk/sdk v0.20250618.1093309
+## explicit; go 1.24.1
 github.com/hashicorp/go-azure-sdk/sdk/auth
 github.com/hashicorp/go-azure-sdk/sdk/auth/autorest
 github.com/hashicorp/go-azure-sdk/sdk/claims
@@ -137,7 +142,7 @@ github.com/hashicorp/go-azure-sdk/sdk/odata
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
+# github.com/hashicorp/go-cty v1.4.1
 ## explicit; go 1.12
 github.com/hashicorp/go-cty/cty
 github.com/hashicorp/go-cty/cty/convert
@@ -165,7 +170,7 @@ github.com/hashicorp/hcl/v2/hclsyntax
 # github.com/hashicorp/logutils v1.0.0
 ## explicit
 github.com/hashicorp/logutils
-# github.com/hashicorp/terraform-plugin-go v0.25.0
+# github.com/hashicorp/terraform-plugin-go v0.26.0
 ## explicit; go 1.22.0
 github.com/hashicorp/terraform-plugin-go/tfprotov5
 github.com/hashicorp/terraform-plugin-go/tftypes
@@ -176,7 +181,7 @@ github.com/hashicorp/terraform-plugin-log/internal/hclogutils
 github.com/hashicorp/terraform-plugin-log/internal/logging
 github.com/hashicorp/terraform-plugin-log/tflog
 github.com/hashicorp/terraform-plugin-log/tfsdklog
-# github.com/hashicorp/terraform-plugin-sdk/v2 v2.35.0
+# github.com/hashicorp/terraform-plugin-sdk/v2 v2.36.1
 ## explicit; go 1.22.0
 github.com/hashicorp/terraform-plugin-sdk/v2/diag
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging
@@ -232,7 +237,7 @@ github.com/vmihailenco/msgpack/v5/msgpcode
 github.com/vmihailenco/tagparser/v2
 github.com/vmihailenco/tagparser/v2/internal
 github.com/vmihailenco/tagparser/v2/internal/parser
-# github.com/zclconf/go-cty v1.16.0
+# github.com/zclconf/go-cty v1.16.2
 ## explicit; go 1.18
 github.com/zclconf/go-cty/cty
 github.com/zclconf/go-cty/cty/convert
@@ -242,31 +247,31 @@ github.com/zclconf/go-cty/cty/function/stdlib
 github.com/zclconf/go-cty/cty/gocty
 github.com/zclconf/go-cty/cty/json
 github.com/zclconf/go-cty/cty/set
-# golang.org/x/crypto v0.32.0
-## explicit; go 1.20
+# golang.org/x/crypto v0.39.0
+## explicit; go 1.23.0
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/pkcs12
 golang.org/x/crypto/pkcs12/internal/rc2
-# golang.org/x/mod v0.22.0
-## explicit; go 1.22.0
+# golang.org/x/mod v0.25.0
+## explicit; go 1.23.0
 golang.org/x/mod/semver
-# golang.org/x/oauth2 v0.25.0
-## explicit; go 1.18
+# golang.org/x/oauth2 v0.30.0
+## explicit; go 1.23.0
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sync v0.10.0
-## explicit; go 1.18
+# golang.org/x/sync v0.15.0
+## explicit; go 1.23.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.29.0
-## explicit; go 1.18
+# golang.org/x/sys v0.33.0
+## explicit; go 1.23.0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.21.0
-## explicit; go 1.18
+# golang.org/x/text v0.26.0
+## explicit; go 1.23.0
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.29.0
-## explicit; go 1.22.0
+# golang.org/x/tools v0.33.0
+## explicit; go 1.23.0
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/packages
@@ -298,7 +303,7 @@ google.golang.org/appengine/internal/datastore
 google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/modules
 google.golang.org/appengine/internal/remote_api
-# google.golang.org/protobuf v1.36.2
+# google.golang.org/protobuf v1.36.5
 ## explicit; go 1.21
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
