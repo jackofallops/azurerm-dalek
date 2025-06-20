@@ -427,13 +427,11 @@ var (
 	}
 )
 
-// LROClient is an interface for clients that can be used with the generic LROPoller.
 type LROClient interface {
 	NewRequest(ctx context.Context, opts client.RequestOptions) (*http.Request, error)
 	Execute(ctx context.Context, req *http.Request) (*http.Response, error)
 }
 
-// NewLROPoller - creates a new poller for NetApp deletions or any resource type that supports Azure-AsyncOperation polling.
 func NewLROPoller(client LROClient, response *http.Response) *netappLROPoller {
 	if urlStr := response.Header.Get("Azure-AsyncOperation"); urlStr != "" {
 		return &netappLROPoller{
@@ -447,6 +445,8 @@ func NewLROPoller(client LROClient, response *http.Response) *netappLROPoller {
 type myOptions struct {
 	azureAsyncOperation string
 }
+
+var _ client.Options = myOptions{}
 
 func (p myOptions) ToHeaders() *client.Headers {
 	return &client.Headers{}
@@ -476,7 +476,6 @@ func (p netappLROPoller) Poll(ctx context.Context) (*pollers.PollResult, error) 
 		return &pollingSuccess, nil
 	}
 	p.azureAsyncOperation = strings.Replace(p.azureAsyncOperation, "https://management.azure.com/", "", 1)
-	var _ client.Options = myOptions{}
 	opts := client.RequestOptions{
 		ContentType: "application/json; charset=utf-8",
 		ExpectedStatusCodes: []int{
