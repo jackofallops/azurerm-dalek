@@ -15,20 +15,15 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backuppolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backups"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backupvaults"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backuppolicy"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backups"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backupvaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/capacitypools"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshots"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshotpolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumes"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumesreplication"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumes"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumesreplication"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2024-01-01/monitors"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-10-01-preview/namespaces"
-	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2023-09-01"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
+	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotecteditems"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
@@ -372,12 +367,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	storageSyncCloudEndpointClient.Client.Authorizer = resourceManagerAuthorizer
 
-	storageAccountsClient, err := storageaccounts.NewStorageAccountsClientWithBaseURI(environment.ResourceManager)
-	if err != nil {
-		return nil, fmt.Errorf("building Storage Accounts Client: %+v", err)
-	}
-	storageAccountsClient.Client.Authorizer = resourceManagerAuthorizer
-
 	return &ResourceManagerClient{
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
@@ -407,6 +396,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		StorageSyncClient:                          storageSyncClient,
 		StorageSyncGroupClient:                     storageSyncGroupClient,
 		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
-		StorageAccountsClient:                      storageAccountsClient,
+		StorageAccountsClient:                      storageaccountsClient,
 	}, nil
 }
