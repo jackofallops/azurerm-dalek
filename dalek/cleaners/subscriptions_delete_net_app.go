@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/snapshotpolicy"
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backuppolicy"
@@ -111,6 +112,10 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 			return err
 		}
 
+		if err := deleteSnapshotPolicies(ctx, accountId, client, opts); err != nil {
+			return err
+		}
+
 		capacityPoolId, err := capacitypools.ParseCapacityPoolID(*capacityPool.Id)
 		if err != nil {
 			return err
@@ -147,7 +152,6 @@ func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.Azure
 	if err != nil {
 		return fmt.Errorf("listing NetApp Volumes for %s: %+v", capacityPoolForVolumesId, err)
 	}
-
 	log.Printf("[DEBUG] Found %d NetApp Volumes", len(volumeList.Items))
 	for _, volume := range volumeList.Items {
 		if volume.Id == nil {
@@ -367,6 +371,49 @@ func deleteSnapshots(ctx context.Context, volumeId string, client *clients.Azure
 	return nil
 }
 
+func deleteSnapshotPolicies(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+	snapshotPolicyClient := client.ResourceManager.NetAppSnapshotPolicyClient
+	accountIdForSnapshots, err := snapshotpolicy.ParseNetAppAccountID(accountId)
+	if err != nil {
+		return err
+	}
+	resp, err := snapshotPolicyClient.SnapshotPoliciesList(ctx, *accountIdForSnapshots)
+	if err != nil {
+		return err
+	}
+	if resp.Model == nil {
+		return fmt.Errorf("listing NetApp Snapshot Policies for %s: model was nil", accountIdForSnapshots)
+	}
+	if resp.Model.Value == nil {
+		return fmt.Errorf("listing NetApp Snapshot Policies for %s: value was nil", accountIdForSnapshots)
+	}
+	log.Printf("[DEBUG] Found %d NetApp Snapshot Policies", len(*resp.Model.Value))
+	for _, snapshotPolicy := range *resp.Model.Value {
+		if snapshotPolicy.Id == nil {
+			continue
+		}
+		policyID, err := snapshotpolicy.ParseSnapshotPolicyID(*snapshotPolicy.Id)
+		if err != nil {
+			return err
+		}
+		if !opts.ActuallyDelete {
+			log.Printf("[DEBUG] Would have deleted %s", policyID.String())
+			continue
+		} else {
+			if response, err := snapshotPolicyClient.SnapshotPoliciesDelete(ctx, *policyID); err != nil {
+				return err
+			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: snapshotPolicyClient.Client}, response.HttpResponse); pollerType != nil {
+				poller := pollers.NewPoller(pollerType, 0, 10)
+				if err := poller.PollUntilDone(ctx); err != nil {
+					return fmt.Errorf("polling delete operation for %s: %+v", policyID, err)
+				}
+			}
+		}
+		log.Printf("[DEBUG] Deleted %s", policyID)
+	}
+	return nil
+}
+
 func deleteBackups(ctx context.Context, vaultId string, client *clients.AzureClient, opts options.Options) error {
 	backupsVaultId, err := backups.ParseBackupVaultID(vaultId)
 	if err != nil {
@@ -500,17 +547,16 @@ func (p netappLROPoller) Poll(ctx context.Context) (*pollers.PollResult, error) 
 	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
 		return nil, fmt.Errorf("decoding response body: %+v", err)
 	}
+	if respBody.Status == "Deleting" {
+		return &pollingInProgress, nil
+	}
 	if respBody.Status == "Failed" {
 		return nil, pollers.PollingFailedError{
 			Message: respBody.Error.Message,
 		}
 	}
-	// TODO handle other statuses once we know what they are.
-	switch resp.StatusCode {
-	case http.StatusOK:
+	if respBody.Status == "Succeeded" {
 		return &pollingSuccess, nil
-	case http.StatusAccepted:
-		return &pollingInProgress, nil
 	}
 
 	return nil, fmt.Errorf("unexpected status code %d. Response body: %s", resp.StatusCode, resp.Body)

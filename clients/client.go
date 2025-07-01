@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/keyvault/2023-07-01/managedhsms"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2024-10-01/workspaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/snapshotpolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backups"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/backupvaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-01-01/capacitypools"
@@ -30,6 +31,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
 	serviceBus "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/storage/2023-05-01/storageaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
@@ -68,6 +70,7 @@ type ResourceManagerClient struct {
 	NetAppCapacityPoolClient                   *capacitypools.CapacityPoolsClient
 	NetAppVolumeClient                         *volumes.VolumesClient
 	NetAppSnapshotClient                       *snapshots.SnapshotsClient
+	NetAppSnapshotPolicyClient                 *snapshotpolicy.SnapshotPolicyClient
 	NetAppVolumeReplicationClient              *volumesreplication.VolumesReplicationClient
 	NewRelicMonitorClient                      *monitors.MonitorsClient
 	NotificationHubNamespaceClient             *namespaces.NamespacesClient
@@ -78,6 +81,7 @@ type ResourceManagerClient struct {
 	RecoveryServicesProtectedItemClient        *protecteditems.ProtectedItemsClient
 	RecoveryServicesBackupProtectedItemsClient *backupprotecteditems.BackupProtectedItemsClient
 	ServiceBus                                 *serviceBus.Client
+	StorageAccountsClient                      *storageaccounts.StorageAccountsClient
 	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
 	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
 	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
@@ -191,6 +195,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	if !ok {
 		return nil, fmt.Errorf("environment %q was missing a Resource Manager endpoint", environment.Name)
 	}
+
 	dataProtectionClient, err := dataProtection.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
 		c.Authorizer = resourceManagerAuthorizer
 	})
@@ -276,6 +281,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	netAppSnapshotClient.Client.Authorizer = resourceManagerAuthorizer
 
+	netAppSnapshotPolicyClient, err := snapshotpolicy.NewSnapshotPolicyClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building NetApp Volume Client: %+v", err)
+	}
+	netAppSnapshotPolicyClient.Client.Authorizer = resourceManagerAuthorizer
+
 	netAppVolumeReplicationClient, err := volumesreplication.NewVolumesReplicationClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building NetApp Volume Replication Client: %+v", err)
@@ -332,6 +343,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		return nil, fmt.Errorf("building ServiceBus Client: %+v", err)
 	}
 
+	storageaccountsClient, err := storageaccounts.NewStorageAccountsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building Storage Accounts Client: %+v", err)
+	}
+	storageaccountsClient.Client.Authorizer = resourceManagerAuthorizer
+
 	storageSyncClient, err := storagesyncservicesresource.NewStorageSyncServicesResourceClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building StorageSync Client: %+v", err)
@@ -350,6 +367,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	storageSyncCloudEndpointClient.Client.Authorizer = resourceManagerAuthorizer
 
+	storageAccountsClient, err := storageaccounts.NewStorageAccountsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building Storage Accounts Client: %+v", err)
+	}
+	storageAccountsClient.Client.Authorizer = resourceManagerAuthorizer
+
 	return &ResourceManagerClient{
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
@@ -366,6 +389,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		NetAppVolumeClient:                         netAppVolumeClient,
 		NetAppVolumeReplicationClient:              netAppVolumeReplicationClient,
 		NetAppSnapshotClient:                       netAppSnapshotClient,
+		NetAppSnapshotPolicyClient:                 netAppSnapshotPolicyClient,
 		NewRelicMonitorClient:                      newRelicMonitorClient,
 		NotificationHubNamespaceClient:             notificationHubNamespacesClient,
 		PaloAlto:                                   paloAltoClient,
@@ -378,5 +402,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		StorageSyncClient:                          storageSyncClient,
 		StorageSyncGroupClient:                     storageSyncGroupClient,
 		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
+		StorageAccountsClient:                      storageAccountsClient,
 	}, nil
 }
