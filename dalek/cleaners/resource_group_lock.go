@@ -16,7 +16,7 @@ type removeLocksFromResourceGroupCleaner struct {
 }
 
 func (removeLocksFromResourceGroupCleaner) Name() string {
-	return "Removing Locks.."
+	return "Resource Group Locks"
 }
 
 func (removeLocksFromResourceGroupCleaner) Cleanup(ctx context.Context, id commonids.ResourceGroupId, client *clients.AzureClient, opts options.Options) error {
