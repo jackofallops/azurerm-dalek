@@ -21,23 +21,6 @@ func (removeLocksFromStorageAccountCleaner) Name() string {
 
 func (removeLocksFromStorageAccountCleaner) Cleanup(ctx context.Context, id commonids.ResourceGroupId, client *clients.AzureClient, opts options.Options) error {
 	var storageAccountScopeId commonids.ScopeId
-	storageAccounts, err := client.ResourceManager.StorageAccountsClient.ListByResourceGroupComplete(ctx, id)
-	if err != nil {
-		log.Printf("[DEBUG] Error listing storage accounts in resource group %q: %+v", id.ResourceGroupName, err)
-		return err
-	}
-	for _, account := range storageAccounts.Items {
-		if account.Id == nil {
-			continue
-		}
-		accountScopeId := commonids.NewScopeID(*account.Id)
-		locks, err := client.ResourceManager.LocksClient.ListByScopeComplete(ctx, accountScopeId, managementlocks.DefaultListByScopeOperationOptions())
-		if err != nil {
-			log.Printf("[DEBUG] Error checking locks for storage account %s: %+v", *account.Id, err)
-			continue
-		}
-	}
-
 	locks, err := client.ResourceManager.LocksClient.ListByScopeComplete(ctx, storageAccountScopeId, managementlocks.DefaultListByScopeOperationOptions())
 	if err != nil {
 		log.Printf("[DEBUG] Error obtaining Storage Account Locks : %+v", err)
