@@ -12,12 +12,12 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshotpolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backuppolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backups"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backupvaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/capacitypools"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/netappaccounts"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshotpolicy"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshots"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumes"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumesreplication"
@@ -39,13 +39,15 @@ func (p deleteNetAppSubscriptionCleaner) Name() string {
 
 func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	if accountLists, err := client.ResourceManager.NetAppAccountClient.AccountsListBySubscription(ctx, subscriptionId); err != nil {
-		return fmt.Errorf("listing NetApp Accounts for %s: %+v", subscriptionId, err)
+		log.Printf("listing NetApp Accounts for %s: %+v", subscriptionId, err)
+		return nil
 	} else if accountLists.Model == nil {
-		return fmt.Errorf("listing NetApp Accounts: model was nil")
+		log.Printf("listing NetApp Accounts: model was nil")
+		return nil
 	} else {
 		log.Printf("[DEBUG] Found %d NetApp Accounts", len(*accountLists.Model))
 		for _, account := range *accountLists.Model {
-			if err := deepDeleteNetAppAccount(ctx, pointer.From(account.Id), subscriptionId, client, opts); err != nil {
+			if err := deleteNetAppAccount(ctx, pointer.From(account.Id), subscriptionId, client, opts); err != nil {
 				log.Printf("deleting NetApp Account %s: %+v", pointer.From(account.Id), err)
 			}
 		}
@@ -53,7 +55,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 	return nil
 }
 
-func deepDeleteNetAppAccount(ctx context.Context, id string, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
+func deleteNetAppAccount(ctx context.Context, id string, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	if id == "" {
 		return nil
 	}
@@ -67,11 +69,11 @@ func deepDeleteNetAppAccount(ctx context.Context, id string, subscriptionId comm
 		return nil
 	}
 
-	if err := deepDeleteBackupVaults(ctx, id, client, opts); err != nil {
+	if err := deleteBackupVaults(ctx, id, client, opts); err != nil {
 		return err
 	}
 
-	if err := deepDeleteCapacityPools(ctx, id, client, opts); err != nil {
+	if err := deleteCapacityPools(ctx, id, client, opts); err != nil {
 		return err
 	}
 
@@ -94,7 +96,7 @@ func deepDeleteNetAppAccount(ctx context.Context, id string, subscriptionId comm
 	return nil
 }
 
-func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+func deleteCapacityPools(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
 	netAppCapacityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
 	accountIdForCapacityPool, _ := capacitypools.ParseNetAppAccountID(accountId)
 	capacityPoolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
@@ -108,7 +110,7 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 			continue
 		}
 
-		if err := deepDeleteVolumes(ctx, *capacityPool.Id, client, opts); err != nil {
+		if err := deleteVolumes(ctx, *capacityPool.Id, client, opts); err != nil {
 			return err
 		}
 
@@ -141,7 +143,7 @@ func deepDeleteCapacityPools(ctx context.Context, accountId string, client *clie
 	return nil
 }
 
-func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.AzureClient, opts options.Options) error {
+func deleteVolumes(ctx context.Context, poolId string, client *clients.AzureClient, opts options.Options) error {
 	capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(poolId)
 	if err != nil {
 		return err
@@ -204,7 +206,7 @@ func deepDeleteVolumes(ctx context.Context, poolId string, client *clients.Azure
 	return nil
 }
 
-func deepDeleteBackupVaults(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+func deleteBackupVaults(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
 	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(accountId)
 	if err != nil {
 		return fmt.Errorf("[ERROR] Unable to parse NetApp Account ID for Backup Vaults: %+v", err)
