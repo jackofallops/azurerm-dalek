@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
 	eventhubNamespace "github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2022-01-01-preview/namespaces"
