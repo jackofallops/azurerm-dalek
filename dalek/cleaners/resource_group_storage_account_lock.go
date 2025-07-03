@@ -12,8 +12,7 @@ import (
 
 var _ ResourceGroupCleaner = removeLocksFromStorageAccountCleaner{}
 
-type removeLocksFromStorageAccountCleaner struct {
-}
+type removeLocksFromStorageAccountCleaner struct{}
 
 func (removeLocksFromStorageAccountCleaner) Name() string {
 	return "Storage Account Locks"

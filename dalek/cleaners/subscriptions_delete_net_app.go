@@ -327,7 +327,6 @@ func deleteBackupPolicies(ctx context.Context, accountIdForBackupPolicy backuppo
 			return fmt.Errorf("[ERROR] %s still exists after delete attempt", policyId.String())
 		}
 		log.Printf("[DEBUG] Deleted %s", policyId)
-
 	}
 
 	return nil
@@ -337,7 +336,7 @@ func deleteSnapshots(ctx context.Context, volumeIdForSnapshots snapshots.VolumeI
 	snapshotClient := client.ResourceManager.NetAppSnapshotClient
 	resp, err := snapshotClient.List(ctx, volumeIdForSnapshots)
 	if err != nil || resp.Model == nil || resp.Model.Value == nil {
-		return fmt.Errorf("listing NetApp Snapshots for %s")
+		return fmt.Errorf("listing NetApp Snapshots for %s", volumeIdForSnapshots)
 	}
 	if len(*resp.Model.Value) == 0 {
 		return nil
@@ -567,7 +566,7 @@ func (a *lroClientAdapter) NewRequest(ctx context.Context, opts client.RequestOp
 func (a *lroClientAdapter) Execute(ctx context.Context, req *http.Request) (*http.Response, error) {
 	// Wrap the http.Request in a client.Request
 	cReq := &client.Request{Request: req, Client: a.inner}
-	resp, err := a.inner.Client.Execute(ctx, cReq)
+	resp, err := a.inner.Execute(ctx, cReq)
 	if err != nil {
 		return nil, err
 	}
