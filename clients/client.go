@@ -170,7 +170,7 @@ func buildMicrosoftGraphClient(ctx context.Context, creds auth.Credentials, envi
 	}, nil
 }
 
-func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, environment environments.Environment, subscriptionId string) (*ResourceManagerClient, error) {
+func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, environment environments.Environment, _ string) (*ResourceManagerClient, error) {
 	resourceManagerAuthorizer, err := auth.NewAuthorizerFromCredentials(ctx, creds, environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building Resource Manager authorizer: %+v", err)

@@ -17,8 +17,7 @@ import (
 
 var _ ResourceGroupCleaner = removeDataProtectionFromResourceGroupCleaner{}
 
-type removeDataProtectionFromResourceGroupCleaner struct {
-}
+type removeDataProtectionFromResourceGroupCleaner struct{}
 
 func (removeDataProtectionFromResourceGroupCleaner) Name() string {
 	return "Removing Data Protection"
@@ -50,6 +49,11 @@ func (removeDataProtectionFromResourceGroupCleaner) Cleanup(ctx context.Context,
 		// We have to undelete items that were deleted when softdelete was enabled and then delete them again
 		deletedBackupInstanceVaultId := deletedbackupinstances.NewBackupVaultID(vaultId.SubscriptionId, vaultId.ResourceGroupName, vaultId.BackupVaultName)
 		deletedInstances, err := client.ResourceManager.DataProtection.DeletedBackupInstances.ListComplete(ctx, deletedBackupInstanceVaultId)
+		if err != nil {
+			log.Printf("deleted Backup Instances within %s was empty", deletedBackupInstanceVaultId)
+			continue
+		}
+
 		for _, deletedInstance := range deletedInstances.Items {
 			deletedInstanceId := deletedbackupinstances.NewDeletedBackupInstanceID(deletedBackupInstanceVaultId.SubscriptionId, deletedBackupInstanceVaultId.ResourceGroupName, deletedBackupInstanceVaultId.BackupVaultName, *deletedInstance.Name)
 

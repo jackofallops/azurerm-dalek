@@ -16,8 +16,7 @@ import (
 
 var _ ResourceGroupCleaner = eventhubNamespaceBreakPairingCleaner{}
 
-type eventhubNamespaceBreakPairingCleaner struct {
-}
+type eventhubNamespaceBreakPairingCleaner struct{}
 
 func (c eventhubNamespaceBreakPairingCleaner) ResourceTypes() []string {
 	return []string{

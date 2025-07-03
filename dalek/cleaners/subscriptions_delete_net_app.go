@@ -102,7 +102,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 				volumeReplicationId, err := volumesreplication.ParseVolumeID(*volume.Id)
 				if err != nil {
-					return nil
+					continue
 				}
 
 				if resp, err := netAppVolumeReplicationClient.VolumesDeleteReplication(ctx, *volumeReplicationId); err != nil {

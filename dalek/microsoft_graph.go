@@ -11,29 +11,30 @@ import (
 
 func (d *Dalek) MicrosoftGraph(ctx context.Context) error {
 	return nil
-	//log.Printf("[DEBUG] Preparing to delete Service Principals")
-	//if err := d.deleteMicrosoftGraphServicePrincipals(ctx); err != nil {
+	// log.Printf("[DEBUG] Preparing to delete Service Principals")
+	// if err := d.deleteMicrosoftGraphServicePrincipals(ctx); err != nil {
 	//	return fmt.Errorf("deleting Service Principals: %+v", err)
-	//}
+	// }
 	//
-	//log.Printf("[DEBUG] Preparing to delete Applications")
-	//if err := d.deleteMicrosoftGraphApplications(ctx); err != nil {
+	// log.Printf("[DEBUG] Preparing to delete Applications")
+	// if err := d.deleteMicrosoftGraphApplications(ctx); err != nil {
 	//	return fmt.Errorf("deleting Applications: %+v", err)
-	//}
+	// }
 	//
-	//log.Printf("[DEBUG] Preparing to delete Groups")
-	//if err := d.deleteMicrosoftGraphGroups(ctx); err != nil {
+	// log.Printf("[DEBUG] Preparing to delete Groups")
+	// if err := d.deleteMicrosoftGraphGroups(ctx); err != nil {
 	//	return fmt.Errorf("deleting Groups: %+v", err)
-	//}
+	// }
 	//
-	//log.Printf("[DEBUG] Preparing to delete Users")
-	//if err := d.deleteMicrosoftGraphUsers(ctx); err != nil {
+	// log.Printf("[DEBUG] Preparing to delete Users")
+	// if err := d.deleteMicrosoftGraphUsers(ctx); err != nil {
 	//	return fmt.Errorf("deleting Users: %+v", err)
-	//}
+	// }
 	//
-	//return nil
+	// return nil
 }
 
+// nolint: unused
 func (d *Dalek) deleteMicrosoftGraphApplications(ctx context.Context) error {
 	if len(d.opts.Prefix) == 0 {
 		return fmt.Errorf("[ERROR] Not proceeding to delete Microsoft Graph Applications for safety; prefix not specified")
@@ -71,6 +72,7 @@ func (d *Dalek) deleteMicrosoftGraphApplications(ctx context.Context) error {
 	return nil
 }
 
+// nolint: unused
 func (d *Dalek) deleteMicrosoftGraphGroups(ctx context.Context) error {
 	if len(d.opts.Prefix) == 0 {
 		return fmt.Errorf("[ERROR] Not proceeding to delete Microsoft Graph Groups for safety; prefix not specified")
@@ -107,6 +109,7 @@ func (d *Dalek) deleteMicrosoftGraphGroups(ctx context.Context) error {
 	return nil
 }
 
+// nolint: unused
 func (d *Dalek) deleteMicrosoftGraphServicePrincipals(ctx context.Context) error {
 	if len(d.opts.Prefix) == 0 {
 		return fmt.Errorf("[ERROR] Not proceeding to delete Microsoft Graph Service Principals for safety; prefix not specified")
@@ -147,6 +150,7 @@ func (d *Dalek) deleteMicrosoftGraphServicePrincipals(ctx context.Context) error
 	return nil
 }
 
+// nolint: unused
 func (d *Dalek) deleteMicrosoftGraphUsers(ctx context.Context) error {
 	if len(d.opts.Prefix) == 0 {
 		return fmt.Errorf("[ERROR] Not proceeding to delete Microsoft Graph Users for safety; prefix not specified")

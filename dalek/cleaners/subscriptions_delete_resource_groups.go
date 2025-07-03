@@ -17,8 +17,7 @@ import (
 
 var _ SubscriptionCleaner = deleteResourceGroupsInSubscriptionCleaner{}
 
-type deleteResourceGroupsInSubscriptionCleaner struct {
-}
+type deleteResourceGroupsInSubscriptionCleaner struct{}
 
 func (d deleteResourceGroupsInSubscriptionCleaner) Name() string {
 	return "Delete Resource Groups in Subscription"
