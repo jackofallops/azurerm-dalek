@@ -17,6 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  debug:
+    steps:
+      - shell: env ; go version
   golint:
     runs-on: ubuntu-latest
     steps:
