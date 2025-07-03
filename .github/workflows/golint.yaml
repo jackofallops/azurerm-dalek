@@ -19,7 +19,7 @@ concurrency:
 jobs:
   debug:
     steps:
-      - shell: env ; go version
+      - run: env ; go version
   golint:
     runs-on: ubuntu-latest
     steps:
