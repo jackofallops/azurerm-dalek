@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   debug:
+    runs-on: ubuntu-latest
     steps:
       - run: env ; go version
   golint:
