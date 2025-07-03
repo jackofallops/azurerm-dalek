@@ -55,7 +55,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 	return nil
 }
 
-func deleteNetAppAccount(ctx context.Context, id string, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
+func deleteNetAppAccount(ctx context.Context, id netappaccounts.NetAppAccountId, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	if id == "" {
 		return nil
 	}
@@ -96,7 +96,7 @@ func deleteNetAppAccount(ctx context.Context, id string, subscriptionId commonid
 	return nil
 }
 
-func deleteCapacityPools(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+func deleteCapacityPools(ctx context.Context, accountId capacitypools.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	netAppCapacityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
 	accountIdForCapacityPool, _ := capacitypools.ParseNetAppAccountID(accountId)
 	capacityPoolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
@@ -143,7 +143,7 @@ func deleteCapacityPools(ctx context.Context, accountId string, client *clients.
 	return nil
 }
 
-func deleteVolumes(ctx context.Context, poolId string, client *clients.AzureClient, opts options.Options) error {
+func deleteVolumes(ctx context.Context, poolId volumes.CapacityPoolId, client *clients.AzureClient, opts options.Options) error {
 	capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(poolId)
 	if err != nil {
 		return err
@@ -206,7 +206,7 @@ func deleteVolumes(ctx context.Context, poolId string, client *clients.AzureClie
 	return nil
 }
 
-func deleteBackupVaults(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+func deleteBackupVaults(ctx context.Context, accountId backupvaults.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(accountId)
 	if err != nil {
 		return fmt.Errorf("[ERROR] Unable to parse NetApp Account ID for Backup Vaults: %+v", err)
@@ -263,7 +263,7 @@ func deleteBackupVaults(ctx context.Context, accountId string, client *clients.A
 	return nil
 }
 
-func deleteBackupPolicies(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+func deleteBackupPolicies(ctx context.Context, accountId backuppolicy.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	backupsPolicyClient := client.ResourceManager.NetAppBackupPolicyClient
 	accountIdForBackupPolicy, err := backuppolicy.ParseNetAppAccountID(accountId)
 	if err != nil {
@@ -307,7 +307,6 @@ func deleteBackupPolicies(ctx context.Context, accountId string, client *clients
 						log.Printf("[DEBUG] Detached volume %s from Backup Policy %s", *volume.VolumeResourceId, policyId)
 					}
 				}
-				time.Sleep(10 * time.Second) // Wait for the detach operation to complete
 			}
 
 			if response, err := backupsPolicyClient.BackupPoliciesDelete(ctx, *policyId); err != nil {
@@ -326,10 +325,11 @@ func deleteBackupPolicies(ctx context.Context, accountId string, client *clients
 			log.Printf("[DEBUG] Deleted %s", policyId)
 		}
 	}
+	
 	return nil
 }
 
-func deleteSnapshots(ctx context.Context, volumeId string, client *clients.AzureClient, opts options.Options) error {
+func deleteSnapshots(ctx context.Context, volumeId snapshots.VolumeId, client *clients.AzureClient, opts options.Options) error {
 	volumeIdForSnapshots, err := snapshots.ParseVolumeID(volumeId)
 	if err != nil {
 		return err
@@ -337,14 +337,11 @@ func deleteSnapshots(ctx context.Context, volumeId string, client *clients.Azure
 
 	snapshotClient := client.ResourceManager.NetAppSnapshotClient
 	resp, err := snapshotClient.List(ctx, *volumeIdForSnapshots)
-	if err != nil {
-		return err
+	if err != nil || resp.Model == nil || resp.Model.Value == nil {
+		return fmt.Errorf(listing NetApp Snapshots for %s)
 	}
-	if resp.Model == nil {
-		return fmt.Errorf("listing NetApp Snapshots for %s: model was nil", volumeIdForSnapshots)
-	}
-	if resp.Model.Value == nil {
-		return fmt.Errorf("listing NetApp Snapshots for %s: value was nil", volumeIdForSnapshots)
+	if len(*resp.Model.Value) == 0 {
+		return nil
 	}
 	log.Printf("[DEBUG] Found %d NetApp Snapshots", len(*resp.Model.Value))
 	for _, snapshot := range *resp.Model.Value {
@@ -373,7 +370,7 @@ func deleteSnapshots(ctx context.Context, volumeId string, client *clients.Azure
 	return nil
 }
 
-func deleteSnapshotPolicies(ctx context.Context, accountId string, client *clients.AzureClient, opts options.Options) error {
+func deleteSnapshotPolicies(ctx context.Context, accountId snapshotpolicy.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	snapshotPolicyClient := client.ResourceManager.NetAppSnapshotPolicyClient
 	accountIdForSnapshots, err := snapshotpolicy.ParseNetAppAccountID(accountId)
 	if err != nil {
@@ -416,7 +413,7 @@ func deleteSnapshotPolicies(ctx context.Context, accountId string, client *clien
 	return nil
 }
 
-func deleteBackups(ctx context.Context, vaultId string, client *clients.AzureClient, opts options.Options) error {
+func deleteBackups(ctx context.Context, vaultId backups.BackupVaultId, client *clients.AzureClient, opts options.Options) error {
 	backupsVaultId, err := backups.ParseBackupVaultID(vaultId)
 	if err != nil {
 		return err
