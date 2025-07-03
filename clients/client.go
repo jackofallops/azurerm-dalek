@@ -366,12 +366,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	storageSyncCloudEndpointClient.Client.Authorizer = resourceManagerAuthorizer
 
-	storageAccountsClient, err := storageaccounts.NewStorageAccountsClientWithBaseURI(environment.ResourceManager)
-	if err != nil {
-		return nil, fmt.Errorf("building Storage Accounts Client: %+v", err)
-	}
-	storageAccountsClient.Client.Authorizer = resourceManagerAuthorizer
-
 	return &ResourceManagerClient{
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,

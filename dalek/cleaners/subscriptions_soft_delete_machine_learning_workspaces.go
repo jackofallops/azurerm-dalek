@@ -14,8 +14,7 @@ import (
 
 var _ SubscriptionCleaner = purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner{}
 
-type purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner struct {
-}
+type purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner struct{}
 
 func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Name() string {
 	return "Purging Soft Deleted Machine Learning Workspaces in Subscription"

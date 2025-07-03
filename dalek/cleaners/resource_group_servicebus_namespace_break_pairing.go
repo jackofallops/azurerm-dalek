@@ -17,8 +17,7 @@ import (
 
 var _ ResourceGroupCleaner = serviceBusNamespaceBreakPairingCleaner{}
 
-type serviceBusNamespaceBreakPairingCleaner struct {
-}
+type serviceBusNamespaceBreakPairingCleaner struct{}
 
 func (serviceBusNamespaceBreakPairingCleaner) Name() string {
 	return "ServiceBus Namespace - Break Pairing"

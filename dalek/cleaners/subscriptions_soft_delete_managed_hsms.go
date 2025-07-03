@@ -13,8 +13,7 @@ import (
 
 var _ SubscriptionCleaner = purgeSoftDeletedManagedHSMsInSubscriptionCleaner{}
 
-type purgeSoftDeletedManagedHSMsInSubscriptionCleaner struct {
-}
+type purgeSoftDeletedManagedHSMsInSubscriptionCleaner struct{}
 
 func (p purgeSoftDeletedManagedHSMsInSubscriptionCleaner) Name() string {
 	return "Purging Soft Deleted Key Vaults in Subscription"
