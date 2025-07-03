@@ -38,49 +38,50 @@ func (p deleteNetAppSubscriptionCleaner) Name() string {
 }
 
 func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
-	if accountLists, err := client.ResourceManager.NetAppAccountClient.AccountsListBySubscription(ctx, subscriptionId); err != nil {
-		log.Printf("listing NetApp Accounts for %s: %+v", subscriptionId, err)
-		return nil
-	} else if accountLists.Model == nil {
-		log.Printf("listing NetApp Accounts: model was nil")
-		return nil
-	} else {
-		log.Printf("[DEBUG] Found %d NetApp Accounts", len(*accountLists.Model))
-		for _, account := range *accountLists.Model {
-			if err := deleteNetAppAccount(ctx, pointer.From(account.Id), subscriptionId, client, opts); err != nil {
-				log.Printf("deleting NetApp Account %s: %+v", pointer.From(account.Id), err)
-			}
+	accountLists, err := client.ResourceManager.NetAppAccountClient.AccountsListBySubscription(ctx, subscriptionId)
+	if err != nil || accountLists.Model == nil {
+		return fmt.Errorf("listing NetApp Accounts for %s: %+v", subscriptionId, err)
+	}
+	log.Printf("[DEBUG] Found %d NetApp Accounts", len(*accountLists.Model))
+	for _, account := range *accountLists.Model {
+		accountId, err := netappaccounts.ParseNetAppAccountID(pointer.From(account.Id))
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(strings.ToLower(accountId.ResourceGroupName), strings.ToLower(opts.Prefix)) {
+			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", accountId.ResourceGroupName, opts.Prefix)
+			return nil
+		}
+		if err := deleteNetAppAccount(ctx, pointer.From(accountId), subscriptionId, client, opts); err != nil {
+			log.Printf("deleting NetApp Account %s: %+v", pointer.From(account.Id), err)
 		}
 	}
+
 	return nil
 }
 
-func deleteNetAppAccount(ctx context.Context, id netappaccounts.NetAppAccountId, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
-	if id == "" {
-		return nil
-	}
+func deleteNetAppAccount(ctx context.Context, accountId netappaccounts.NetAppAccountId, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	netAppAccountClient := client.ResourceManager.NetAppAccountClient
-	accountId, err := netappaccounts.ParseNetAppAccountID(id)
+	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(accountId.ID())
 	if err != nil {
-		return err
+		return fmt.Errorf("[ERROR] Unable to parse NetApp Account ID for Backup Vaults: %+v", err)
 	}
-	if !strings.HasPrefix(strings.ToLower(accountId.ResourceGroupName), strings.ToLower(opts.Prefix)) {
-		log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", accountId.ResourceGroupName, opts.Prefix)
-		return nil
-	}
-
-	if err := deleteBackupVaults(ctx, id, client, opts); err != nil {
+	if err := deleteBackupVaults(ctx, pointer.From(accountIdForBackupVault), client, opts); err != nil {
 		return err
 	}
 
-	if err := deleteCapacityPools(ctx, id, client, opts); err != nil {
+	accountIdForCapacityPool, err := capacitypools.ParseNetAppAccountID(accountId.ID())
+	if err != nil {
+		return fmt.Errorf("[ERROR] Unable to parse capacity pool ID: %+v", err)
+	}
+	if err := deleteCapacityPools(ctx, pointer.From(accountIdForCapacityPool), client, opts); err != nil {
 		return err
 	}
 
 	if !opts.ActuallyDelete {
 		log.Printf("[DEBUG] Would have deleted %s", accountId)
 	} else {
-		if _, err := netAppAccountClient.AccountsDelete(ctx, *accountId); err != nil {
+		if _, err := netAppAccountClient.AccountsDelete(ctx, accountId); err != nil {
 			return err
 		}
 		acctList, err := netAppAccountClient.AccountsListBySubscription(ctx, subscriptionId)
@@ -96,10 +97,9 @@ func deleteNetAppAccount(ctx context.Context, id netappaccounts.NetAppAccountId,
 	return nil
 }
 
-func deleteCapacityPools(ctx context.Context, accountId capacitypools.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
+func deleteCapacityPools(ctx context.Context, accountIdForCapacityPool capacitypools.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	netAppCapacityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
-	accountIdForCapacityPool, _ := capacitypools.ParseNetAppAccountID(accountId)
-	capacityPoolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
+	capacityPoolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, accountIdForCapacityPool)
 	if err != nil {
 		return fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err)
 	}
@@ -109,15 +109,20 @@ func deleteCapacityPools(ctx context.Context, accountId capacitypools.NetAppAcco
 		if capacityPool.Id == nil {
 			continue
 		}
-
-		if err := deleteVolumes(ctx, *capacityPool.Id, client, opts); err != nil {
+		capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(pointer.From(capacityPool.Id))
+		if err != nil {
 			return err
 		}
-
-		if err := deleteSnapshotPolicies(ctx, accountId, client, opts); err != nil {
+		if err := deleteVolumes(ctx, pointer.From(capacityPoolForVolumesId), client, opts); err != nil {
 			return err
 		}
-
+		accountIdForSnapshots, err := snapshotpolicy.ParseNetAppAccountID(accountIdForCapacityPool.ID())
+		if err != nil {
+			return err
+		}
+		if err := deleteSnapshotPolicies(ctx, pointer.From(accountIdForSnapshots), client, opts); err != nil {
+			return err
+		}
 		capacityPoolId, err := capacitypools.ParseCapacityPoolID(*capacityPool.Id)
 		if err != nil {
 			return err
@@ -129,7 +134,7 @@ func deleteCapacityPools(ctx context.Context, accountId capacitypools.NetAppAcco
 			if _, err := netAppCapacityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
 				return err
 			}
-			poolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
+			poolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, accountIdForCapacityPool)
 			if err == nil {
 				for _, pool := range poolList.Items {
 					if pool.Id != nil && *pool.Id == capacityPoolId.String() {
@@ -143,16 +148,11 @@ func deleteCapacityPools(ctx context.Context, accountId capacitypools.NetAppAcco
 	return nil
 }
 
-func deleteVolumes(ctx context.Context, poolId volumes.CapacityPoolId, client *clients.AzureClient, opts options.Options) error {
-	capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(poolId)
-	if err != nil {
-		return err
-	}
-
+func deleteVolumes(ctx context.Context, capacityPoolIdForVolumes volumes.CapacityPoolId, client *clients.AzureClient, opts options.Options) error {
 	netAppVolumeClient := client.ResourceManager.NetAppVolumeClient
-	volumeList, err := netAppVolumeClient.ListComplete(ctx, *capacityPoolForVolumesId)
+	volumeList, err := netAppVolumeClient.ListComplete(ctx, capacityPoolIdForVolumes)
 	if err != nil {
-		return fmt.Errorf("listing NetApp Volumes for %s: %+v", capacityPoolForVolumesId, err)
+		return fmt.Errorf("listing NetApp Volumes for %s: %+v", capacityPoolIdForVolumes, err)
 	}
 	log.Printf("[DEBUG] Found %d NetApp Volumes", len(volumeList.Items))
 	for _, volume := range volumeList.Items {
@@ -160,12 +160,11 @@ func deleteVolumes(ctx context.Context, poolId volumes.CapacityPoolId, client *c
 			continue
 		}
 
-		volumeId, err := volumes.ParseVolumeID(*volume.Id)
+		volumeIdForSnapshots, err := snapshots.ParseVolumeID(pointer.From(volume.Id))
 		if err != nil {
 			return err
 		}
-
-		if err := deleteSnapshots(ctx, *volume.Id, client, opts); err != nil {
+		if err := deleteSnapshots(ctx, pointer.From(volumeIdForSnapshots), client, opts); err != nil {
 			return err
 		}
 
@@ -173,7 +172,6 @@ func deleteVolumes(ctx context.Context, poolId volumes.CapacityPoolId, client *c
 		if err != nil {
 			return err
 		}
-
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted %s", volumeIdForReplication)
 		} else {
@@ -184,6 +182,10 @@ func deleteVolumes(ctx context.Context, poolId volumes.CapacityPoolId, client *c
 			log.Printf("[DEBUG] Deleted replication for %s", volumeIdForReplication)
 		}
 
+		volumeId, err := volumes.ParseVolumeID(*volume.Id)
+		if err != nil {
+			return err
+		}
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted %s", volumeId)
 		} else {
@@ -206,14 +208,9 @@ func deleteVolumes(ctx context.Context, poolId volumes.CapacityPoolId, client *c
 	return nil
 }
 
-func deleteBackupVaults(ctx context.Context, accountId backupvaults.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
-	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(accountId)
-	if err != nil {
-		return fmt.Errorf("[ERROR] Unable to parse NetApp Account ID for Backup Vaults: %+v", err)
-	}
-
+func deleteBackupVaults(ctx context.Context, accountIdForBackupVault backupvaults.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	netAppBackupVaultsClient := client.ResourceManager.NetAppBackupVaultsClient
-	backupVaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
+	backupVaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, accountIdForBackupVault)
 	if err != nil {
 		return fmt.Errorf("listing NetApp Backup Vaults for %s: %+v", accountIdForBackupVault, err)
 	}
@@ -224,54 +221,57 @@ func deleteBackupVaults(ctx context.Context, accountId backupvaults.NetAppAccoun
 			continue
 		}
 
-		if err := deleteBackupPolicies(ctx, accountId, client, opts); err != nil {
+		accountIdForBackupPolicy, err := backuppolicy.ParseNetAppAccountID(accountIdForBackupVault.ID())
+		if err != nil {
+			return fmt.Errorf("parsing NetApp Account ID for Backup Policies: %+v", err)
+		}
+		if err := deleteBackupPolicies(ctx, pointer.From(accountIdForBackupPolicy), client, opts); err != nil {
+			return err
+		}
+		vaultIdForBackups, err := backups.ParseBackupVaultID(accountIdForBackupPolicy.ID())
+		if err != nil {
+			return err
+		}
+		if err := deleteBackups(ctx, pointer.From(vaultIdForBackups), client, opts); err != nil {
 			return err
 		}
 
-		if err := deleteBackups(ctx, *vault.Id, client, opts); err != nil {
-			return err
-		}
-
-		vaultIdForBackup, err := backupvaults.ParseBackupVaultID(*vault.Id)
+		vaultIdForVault, err := backupvaults.ParseBackupVaultID(*vault.Id)
 		if err != nil {
 			return err
 		}
 		if !opts.ActuallyDelete {
-			log.Printf("[DEBUG] Would have deleted %s", vaultIdForBackup)
+			log.Printf("[DEBUG] Would have deleted %s", vaultIdForVault)
 		} else {
-			if response, err := netAppBackupVaultsClient.Delete(ctx, *vaultIdForBackup); err != nil {
+			if response, err := netAppBackupVaultsClient.Delete(ctx, *vaultIdForVault); err != nil {
 				return err
 			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: netAppBackupVaultsClient.Client}, response.HttpResponse); pollerType != nil {
 				poller := pollers.NewPoller(pollerType, 0, 10)
 				if err := poller.PollUntilDone(ctx); err != nil {
-					return fmt.Errorf("polling delete operation for %s: %+v", vaultIdForBackup, err)
+					return fmt.Errorf("polling delete operation for %s: %+v", vaultIdForVault, err)
 				}
 			}
-			vaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVault)
+			vaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, accountIdForBackupVault)
 			if err != nil {
 				return fmt.Errorf("listing NetApp Backup Vaults after deletion for %s: %+v", accountIdForBackupVault, err)
 			} else {
 				for _, v := range vaultsList.Items {
-					if v.Id != nil && *v.Id == vaultIdForBackup.String() {
-						return fmt.Errorf("[ERROR] Backup vault %s still exists after delete attempt", vaultIdForBackup.String())
+					if v.Id != nil && *v.Id == vaultIdForVault.String() {
+						return fmt.Errorf("[ERROR] Backup vault %s still exists after delete attempt", vaultIdForVault.String())
 					}
 				}
 			}
-			log.Printf("[DEBUG] Deleted %s", vaultIdForBackup)
+			log.Printf("[DEBUG] Deleted %s", vaultIdForVault)
 		}
 	}
 	return nil
 }
 
-func deleteBackupPolicies(ctx context.Context, accountId backuppolicy.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
+func deleteBackupPolicies(ctx context.Context, accountIdForBackupPolicy backuppolicy.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	backupsPolicyClient := client.ResourceManager.NetAppBackupPolicyClient
-	accountIdForBackupPolicy, err := backuppolicy.ParseNetAppAccountID(accountId)
+	backupPoliciesList, err := backupsPolicyClient.BackupPoliciesList(ctx, accountIdForBackupPolicy)
 	if err != nil {
-		return fmt.Errorf("parsing NetApp Account ID for Backup Policies: %+v", err)
-	}
-	backupPoliciesList, err := backupsPolicyClient.BackupPoliciesList(ctx, *accountIdForBackupPolicy)
-	if err != nil {
-		return fmt.Errorf("listing NetApp Backup Policies for %s: %+v", accountId, err)
+		return fmt.Errorf("listing NetApp Backup Policies for %s: %+v", accountIdForBackupPolicy, err)
 	}
 
 	log.Printf("[DEBUG] Found %d NetApp Backup Policies", len(*backupPoliciesList.Model.Value))
@@ -286,59 +286,58 @@ func deleteBackupPolicies(ctx context.Context, accountId backuppolicy.NetAppAcco
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted %s", policyId)
 			continue
-		} else {
-			if pointer.From(policy.Properties.VolumesAssigned) > 0 {
-				log.Printf("[DEBUG] Detaching %d volumes from Backup Policy %s", pointer.From(policy.Properties.VolumesAssigned), policyId)
-				volumesClient := client.ResourceManager.NetAppVolumeClient
-				for _, volume := range *policy.Properties.VolumeBackups {
-					log.Printf("[DEBUG] Detaching volume %s from Backup Policy %s", *volume.VolumeResourceId, policyId)
-					if volumeId, err := volumes.ParseVolumeID(*volume.VolumeResourceId); err != nil {
-						return fmt.Errorf("parsing Volume ID %s: %+v", *volume.VolumeResourceId, err)
-					} else {
-						volumesClient.UpdateThenPoll(ctx, *volumeId, volumes.VolumePatch{
-							Properties: &volumes.VolumePatchProperties{
-								DataProtection: &volumes.VolumePatchPropertiesDataProtection{
-									Backup: &volumes.VolumeBackupProperties{
-										BackupPolicyId: pointer.To(""),
-									},
+		}
+		if pointer.From(policy.Properties.VolumesAssigned) > 0 {
+			log.Printf("[DEBUG] Detaching %d volumes from Backup Policy %s", pointer.From(policy.Properties.VolumesAssigned), policyId)
+			volumesClient := client.ResourceManager.NetAppVolumeClient
+			for _, volume := range *policy.Properties.VolumeBackups {
+				log.Printf("[DEBUG] Detaching volume %s from Backup Policy %s", *volume.VolumeResourceId, policyId)
+				if volumeId, err := volumes.ParseVolumeID(*volume.VolumeResourceId); err != nil {
+					return fmt.Errorf("parsing Volume ID %s: %+v", *volume.VolumeResourceId, err)
+				} else {
+					err = volumesClient.UpdateThenPoll(ctx, *volumeId, volumes.VolumePatch{
+						Properties: &volumes.VolumePatchProperties{
+							DataProtection: &volumes.VolumePatchPropertiesDataProtection{
+								Backup: &volumes.VolumeBackupProperties{
+									BackupPolicyId: pointer.To(""),
 								},
 							},
-						})
+						},
+					})
+					if err != nil {
+						log.Printf("[ERROR] failed to detach volume")
+					} else {
 						log.Printf("[DEBUG] Detached volume %s from Backup Policy %s", *volume.VolumeResourceId, policyId)
 					}
 				}
 			}
-
-			if response, err := backupsPolicyClient.BackupPoliciesDelete(ctx, *policyId); err != nil {
-				return err
-			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: backupsPolicyClient.Client}, response.HttpResponse); pollerType != nil {
-				poller := pollers.NewPoller(pollerType, 0, 10)
-				if err := poller.PollUntilDone(ctx); err != nil {
-					return fmt.Errorf("polling delete operation for %s: %+v", policyId, err)
-				}
-			}
-			if b, err := backupsPolicyClient.BackupPoliciesGet(ctx, *policyId); err != nil {
-				return err
-			} else if b.Model != nil {
-				return fmt.Errorf("[ERROR] %s still exists after delete attempt", policyId.String())
-			}
-			log.Printf("[DEBUG] Deleted %s", policyId)
 		}
+
+		if response, err := backupsPolicyClient.BackupPoliciesDelete(ctx, *policyId); err != nil {
+			return err
+		} else if pollerType := NewLROPoller(&lroClientAdapter{inner: backupsPolicyClient.Client}, response.HttpResponse); pollerType != nil {
+			poller := pollers.NewPoller(pollerType, 0, 10)
+			if err := poller.PollUntilDone(ctx); err != nil {
+				return fmt.Errorf("polling delete operation for %s: %+v", policyId, err)
+			}
+		}
+		if b, err := backupsPolicyClient.BackupPoliciesGet(ctx, *policyId); err != nil {
+			return err
+		} else if b.Model != nil {
+			return fmt.Errorf("[ERROR] %s still exists after delete attempt", policyId.String())
+		}
+		log.Printf("[DEBUG] Deleted %s", policyId)
+
 	}
-	
+
 	return nil
 }
 
-func deleteSnapshots(ctx context.Context, volumeId snapshots.VolumeId, client *clients.AzureClient, opts options.Options) error {
-	volumeIdForSnapshots, err := snapshots.ParseVolumeID(volumeId)
-	if err != nil {
-		return err
-	}
-
+func deleteSnapshots(ctx context.Context, volumeIdForSnapshots snapshots.VolumeId, client *clients.AzureClient, opts options.Options) error {
 	snapshotClient := client.ResourceManager.NetAppSnapshotClient
-	resp, err := snapshotClient.List(ctx, *volumeIdForSnapshots)
+	resp, err := snapshotClient.List(ctx, volumeIdForSnapshots)
 	if err != nil || resp.Model == nil || resp.Model.Value == nil {
-		return fmt.Errorf(listing NetApp Snapshots for %s)
+		return fmt.Errorf("listing NetApp Snapshots for %s")
 	}
 	if len(*resp.Model.Value) == 0 {
 		return nil
@@ -355,14 +354,13 @@ func deleteSnapshots(ctx context.Context, volumeId snapshots.VolumeId, client *c
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted %s", snapshotID.String())
 			continue
-		} else {
-			if response, err := snapshotClient.Delete(ctx, *snapshotID); err != nil {
-				return err
-			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: snapshotClient.Client}, response.HttpResponse); pollerType != nil {
-				poller := pollers.NewPoller(pollerType, 0, 10)
-				if err := poller.PollUntilDone(ctx); err != nil {
-					return fmt.Errorf("polling delete operation for %s: %+v", snapshotID, err)
-				}
+		}
+		if response, err := snapshotClient.Delete(ctx, *snapshotID); err != nil {
+			return err
+		} else if pollerType := NewLROPoller(&lroClientAdapter{inner: snapshotClient.Client}, response.HttpResponse); pollerType != nil {
+			poller := pollers.NewPoller(pollerType, 0, 10)
+			if err := poller.PollUntilDone(ctx); err != nil {
+				return fmt.Errorf("polling delete operation for %s: %+v", snapshotID, err)
 			}
 		}
 		log.Printf("[DEBUG] Deleted %s", snapshotID)
@@ -370,21 +368,11 @@ func deleteSnapshots(ctx context.Context, volumeId snapshots.VolumeId, client *c
 	return nil
 }
 
-func deleteSnapshotPolicies(ctx context.Context, accountId snapshotpolicy.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
+func deleteSnapshotPolicies(ctx context.Context, accountIdForSnapshots snapshotpolicy.NetAppAccountId, client *clients.AzureClient, opts options.Options) error {
 	snapshotPolicyClient := client.ResourceManager.NetAppSnapshotPolicyClient
-	accountIdForSnapshots, err := snapshotpolicy.ParseNetAppAccountID(accountId)
-	if err != nil {
-		return err
-	}
-	resp, err := snapshotPolicyClient.SnapshotPoliciesList(ctx, *accountIdForSnapshots)
-	if err != nil {
-		return err
-	}
-	if resp.Model == nil {
-		return fmt.Errorf("listing NetApp Snapshot Policies for %s: model was nil", accountIdForSnapshots)
-	}
-	if resp.Model.Value == nil {
-		return fmt.Errorf("listing NetApp Snapshot Policies for %s: value was nil", accountIdForSnapshots)
+	resp, err := snapshotPolicyClient.SnapshotPoliciesList(ctx, accountIdForSnapshots)
+	if err != nil || resp.Model == nil || resp.Model.Value == nil || len(*resp.Model.Value) == 0 {
+		return fmt.Errorf("listing NetApp Snapshot Policies for %s: %+v", accountIdForSnapshots, err)
 	}
 	log.Printf("[DEBUG] Found %d NetApp Snapshot Policies", len(*resp.Model.Value))
 	for _, snapshotPolicy := range *resp.Model.Value {
@@ -413,14 +401,9 @@ func deleteSnapshotPolicies(ctx context.Context, accountId snapshotpolicy.NetApp
 	return nil
 }
 
-func deleteBackups(ctx context.Context, vaultId backups.BackupVaultId, client *clients.AzureClient, opts options.Options) error {
-	backupsVaultId, err := backups.ParseBackupVaultID(vaultId)
-	if err != nil {
-		return err
-	}
-
+func deleteBackups(ctx context.Context, backupsVaultId backups.BackupVaultId, client *clients.AzureClient, opts options.Options) error {
 	netAppBackupsClient := client.ResourceManager.NetAppBackupsClient
-	backupsList, err := netAppBackupsClient.ListByVaultComplete(ctx, *backupsVaultId, backups.ListByVaultOperationOptions{})
+	backupsList, err := netAppBackupsClient.ListByVaultComplete(ctx, backupsVaultId, backups.ListByVaultOperationOptions{})
 	if err != nil {
 		return err
 	}
@@ -436,21 +419,20 @@ func deleteBackups(ctx context.Context, vaultId backups.BackupVaultId, client *c
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted %s", backupId.String())
 			continue
-		} else {
-			if response, err := netAppBackupsClient.Delete(ctx, *backupId); err != nil {
-				return err
-			} else if pollerType := NewLROPoller(&lroClientAdapter{inner: netAppBackupsClient.Client}, response.HttpResponse); pollerType != nil {
-				poller := pollers.NewPoller(pollerType, 0, 10)
-				if err := poller.PollUntilDone(ctx); err != nil {
-					return fmt.Errorf("polling delete operation for %s: %+v", backupId, err)
-				}
-			}
-			b, err := netAppBackupsClient.Get(ctx, *backupId)
-			if err == nil && b.Model != nil {
-				return fmt.Errorf("[ERROR] %s still exists after delete attempt", backupId.String())
-			}
-			log.Printf("[DEBUG] Deleted %s", backupId)
 		}
+		if response, err := netAppBackupsClient.Delete(ctx, *backupId); err != nil {
+			return err
+		} else if pollerType := NewLROPoller(&lroClientAdapter{inner: netAppBackupsClient.Client}, response.HttpResponse); pollerType != nil {
+			poller := pollers.NewPoller(pollerType, 0, 10)
+			if err := poller.PollUntilDone(ctx); err != nil {
+				return fmt.Errorf("polling delete operation for %s: %+v", backupId, err)
+			}
+		}
+		b, err := netAppBackupsClient.Get(ctx, *backupId)
+		if err == nil && b.Model != nil {
+			return fmt.Errorf("[ERROR] %s still exists after delete attempt", backupId.String())
+		}
+		log.Printf("[DEBUG] Deleted %s", backupId)
 	}
 	return nil
 }
