@@ -75,10 +75,15 @@ github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2022-01-01-preview/n
 github.com/hashicorp/go-azure-sdk/resource-manager/keyvault/2023-07-01/managedhsms
 github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2024-10-01/workspaces
 github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups
-github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools
-github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts
-github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes
-github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backuppolicy
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backups
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/backupvaults
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/capacitypools
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/netappaccounts
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshotpolicy
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/snapshots
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumes
+github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-11-01/volumesreplication
 github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors
 github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces
 github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29
@@ -114,6 +119,7 @@ github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview
 github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/subscriptions
 github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/topics
 github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/topicsauthorizationrule
+github.com/hashicorp/go-azure-sdk/resource-manager/storage/2023-05-01/storageaccounts
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource
