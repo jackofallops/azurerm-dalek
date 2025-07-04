@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 
 func main() {
 	log.Print("Starting Azure Dalek..")
-	fmt.Printf("Go version: %s\n", runtime.Version())
 
 	prefix := flag.String("prefix", "acctest", "-prefix=acctest")
 	flag.Parse()
