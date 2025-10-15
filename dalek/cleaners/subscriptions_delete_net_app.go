@@ -69,6 +69,8 @@ func deleteNetAppAccount(ctx context.Context, accountId netappaccounts.NetAppAcc
 	if err := deleteCapacityPools(ctx, pointer.From(accountIdForCapacityPool), client, opts); err != nil {
 		return err
 	}
+	// sleeping because there is some eventual consistency for when the capacity pool decouples from the account
+	time.Sleep(30 * time.Second)
 
 	if !opts.ActuallyDelete {
 		log.Printf("[DEBUG] Would have deleted %s", accountId)
