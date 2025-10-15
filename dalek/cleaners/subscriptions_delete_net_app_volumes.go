@@ -73,10 +73,6 @@ func deleteVolumes(ctx context.Context, capacityPoolIdForVolumes volumes.Capacit
 				return fmt.Errorf("polling delete operation for %s: %+v", volumeId, err)
 			}
 		}
-		vol, err := netAppVolumeClient.Get(ctx, *volumeId)
-		if err == nil && vol.Model != nil {
-			return fmt.Errorf("[ERROR] %s still exists after delete attempt", volumeId)
-		}
 		log.Printf("[DEBUG] Deleted %s", volumeId)
 	}
 

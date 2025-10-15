@@ -27,8 +27,8 @@ type netappLROPoller struct {
 }
 
 type LROClient interface {
-	NewRequest(ctx context.Context, opts client.RequestOptions) (*http.Request, error)
-	Execute(ctx context.Context, req *http.Request) (*http.Response, error)
+	NewRequest(ctx context.Context, opts client.RequestOptions) (httpRequest *http.Request, expectedStatusCodes []int, err error)
+	Execute(ctx context.Context, req *http.Request, expectedStatusCodes []int) (*http.Response, error)
 }
 
 func NewLROPoller(client LROClient, response *http.Response) (*netappLROPoller, error) {
@@ -122,12 +122,12 @@ func (p netappLROPoller) Poll(ctx context.Context) (*pollers.PollResult, error) 
 		},
 	}
 
-	req, err := p.client.NewRequest(ctx, reqOpts)
+	req, expectedStatusCodes, err := p.client.NewRequest(ctx, reqOpts)
 	if err != nil {
 		return nil, fmt.Errorf("building request: %+v", err)
 	}
 
-	res, err := p.client.Execute(ctx, req)
+	res, err := p.client.Execute(ctx, req, expectedStatusCodes)
 	if err != nil {
 		if res == nil || res.StatusCode >= 500 {
 			return nil, fmt.Errorf("executing request: %+v", err)
@@ -180,17 +180,17 @@ type lroClientAdapter struct {
 	inner *resourcemanager.Client
 }
 
-func (a *lroClientAdapter) NewRequest(ctx context.Context, opts client.RequestOptions) (*http.Request, error) {
+func (a *lroClientAdapter) NewRequest(ctx context.Context, opts client.RequestOptions) (*http.Request, []int, error) {
 	cReq, err := a.inner.NewRequest(ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return cReq.Request, nil
+	return cReq.Request, cReq.ValidStatusCodes, nil
 }
 
-func (a *lroClientAdapter) Execute(ctx context.Context, req *http.Request) (*http.Response, error) {
+func (a *lroClientAdapter) Execute(ctx context.Context, req *http.Request, expectedStatusCodes []int) (*http.Response, error) {
 	cReq := &client.Request{Request: req, Client: a.inner}
-	cReq.ValidStatusCodes = []int{http.StatusOK, http.StatusAccepted, http.StatusConflict}
+	cReq.ValidStatusCodes = expectedStatusCodes
 	resp, err := a.inner.Execute(ctx, cReq)
 	if err != nil {
 		return resp.Response, err

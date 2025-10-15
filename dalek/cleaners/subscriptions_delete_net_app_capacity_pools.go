@@ -64,15 +64,6 @@ func deleteCapacityPools(ctx context.Context, accountIdForCapacityPool capacityp
 				return fmt.Errorf("polling delete operation for %s: %+v", capacityPoolId, err)
 			}
 		}
-
-		poolList, err := netAppCapacityPoolClient.PoolsListComplete(ctx, accountIdForCapacityPool)
-		if err == nil {
-			for _, pool := range poolList.Items {
-				if pool.Id != nil && *pool.Id == capacityPoolId.String() {
-					return fmt.Errorf("[ERROR] Capacity pool %s still exists after delete attempt", capacityPoolId.String())
-				}
-			}
-		}
 		log.Printf("[DEBUG] Deleted %s", capacityPoolId)
 	}
 	return nil

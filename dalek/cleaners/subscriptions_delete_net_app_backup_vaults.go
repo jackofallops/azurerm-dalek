@@ -65,15 +65,6 @@ func deleteBackupVaults(ctx context.Context, accountIdForBackupVault backupvault
 				return fmt.Errorf("polling delete operation for %s: %+v", vaultIdForVault, err)
 			}
 		}
-		vaultsList, err := netAppBackupVaultsClient.ListByNetAppAccountComplete(ctx, accountIdForBackupVault)
-		if err != nil {
-			return fmt.Errorf("listing NetApp Backup Vaults after deletion for %s: %+v", accountIdForBackupVault, err)
-		}
-		for _, v := range vaultsList.Items {
-			if v.Id != nil && *v.Id == vaultIdForVault.String() {
-				return fmt.Errorf("[ERROR] Backup vault %s still exists after delete attempt", vaultIdForVault.String())
-			}
-		}
 		log.Printf("[DEBUG] Deleted %s", vaultIdForVault)
 	}
 	return nil

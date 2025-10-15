@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
@@ -40,7 +41,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", accountId.ResourceGroupName, opts.Prefix)
 			continue
 		}
-		if err := deleteNetAppAccount(ctx, pointer.From(accountId), subscriptionId, client, opts); err != nil {
+		if err := deleteNetAppAccount(ctx, pointer.From(accountId), subscriptionId, client, opts, 3); err != nil {
 			log.Printf("deleting NetApp Account %s: %+v", pointer.From(account.Id), err)
 		}
 	}
@@ -48,7 +49,10 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 	return nil
 }
 
-func deleteNetAppAccount(ctx context.Context, accountId netappaccounts.NetAppAccountId, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
+func deleteNetAppAccount(ctx context.Context, accountId netappaccounts.NetAppAccountId, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options, remainingAttempts int) error {
+	if remainingAttempts <= 0 {
+		return fmt.Errorf("[ERROR] Max delete attempts reached for %s", accountId)
+	}
 	netAppAccountClient := client.ResourceManager.NetAppAccountClient
 	accountIdForBackupVault, err := backupvaults.ParseNetAppAccountID(accountId.ID())
 	if err != nil {
@@ -72,6 +76,12 @@ func deleteNetAppAccount(ctx context.Context, accountId netappaccounts.NetAppAcc
 	}
 	resp, err := netAppAccountClient.AccountsDelete(ctx, accountId)
 	if err != nil {
+		if resp.HttpResponse.StatusCode == 409 {
+			// Handle 409 Conflict error
+			log.Printf("[DEBUG] 409 Conflict error occurred while deleting %s: %+v\n Waiting 10 seconds then trying again...", accountId, err)
+			time.Sleep(10 * time.Second)
+			return deleteNetAppAccount(ctx, accountId, subscriptionId, client, opts, remainingAttempts-1)
+		}
 		return err
 	}
 	pollerType, err := NewLROPoller(&lroClientAdapter{inner: netAppAccountClient.Client}, resp.HttpResponse)

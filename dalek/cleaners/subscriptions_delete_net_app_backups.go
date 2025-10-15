@@ -47,10 +47,6 @@ func deleteBackups(ctx context.Context, backupsVaultId backups.BackupVaultId, cl
 				return fmt.Errorf("polling delete operation for %s: %+v", backupId, err)
 			}
 		}
-		b, err := netAppBackupsClient.Get(ctx, *backupId)
-		if err == nil && b.Model != nil {
-			return fmt.Errorf("[ERROR] %s still exists after delete attempt", backupId.String())
-		}
 		log.Printf("[DEBUG] Deleted %s", backupId)
 	}
 	return nil
@@ -116,13 +112,7 @@ func deleteBackupPolicies(ctx context.Context, accountIdForBackupPolicy backuppo
 				return fmt.Errorf("polling delete operation for %s: %+v", policyId, err)
 			}
 		}
-		b, err := backupsPolicyClient.BackupPoliciesGet(ctx, *policyId)
-		if err != nil {
-			return err
-		}
-		if b.Model != nil {
-			return fmt.Errorf("[ERROR] %s still exists after delete attempt", policyId.String())
-		}
+
 		log.Printf("[DEBUG] Deleted %s", policyId)
 	}
 
