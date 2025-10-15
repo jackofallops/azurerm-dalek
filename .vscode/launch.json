@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Go: Args, Envs",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {
+                "YES_I_REALLY_WANT_TO_DELETE_THINGS": "true",
+                "http_proxy": "http://localhost:8888",
+                "https_proxy": "http://localhost:8888",
+                "REQUESTS_CA_BUNDLE": "$HOME/zap_root_ca.cer"
+            },
+            "args": [
+                "--prefix",
+                "acctestwyattnetapp9"
+            ]
+        }
+    ]
+}
