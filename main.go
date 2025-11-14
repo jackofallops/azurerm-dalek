@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -47,27 +48,19 @@ func run(ctx context.Context, credentials clients.Credentials, opts options.Opti
 		return fmt.Errorf("building Azure Clients: %+v", err)
 	}
 
+	var errs []error
+
 	log.Printf("[DEBUG] Options: %s", opts)
 
 	client := dalek.NewDalek(sdkClient, opts)
 	log.Printf("[DEBUG] Processing Resource Manager..")
-	if errors := client.ResourceManager(ctx); len(errors) != 0 {
-		errList := make([]string, 0)
-		for _, e := range errors {
-			errList = append(errList, e.Error())
-		}
-
-		return fmt.Errorf("processing Resource Manager: %+v", strings.Join(errList, "\n"))
-	}
+	errs = append(errs, client.ResourceManager(ctx)...)
 
 	log.Printf("[DEBUG] Processing Microsoft Graph..")
-	if err := client.MicrosoftGraph(ctx); err != nil {
-		return fmt.Errorf("processing Microsoft Graph: %+v", err)
-	}
-	log.Printf("[DEBUG] Processing Management Groups..")
-	if err := client.ManagementGroups(ctx); err != nil {
-		return fmt.Errorf("processing Management Groups: %+v", err)
-	}
+	errs = append(errs, client.MicrosoftGraph(ctx))
 
-	return nil
+	log.Printf("[DEBUG] Processing Management Groups..")
+	errs = append(errs, client.ManagementGroups(ctx))
+
+	return errors.Join(errs...)
 }

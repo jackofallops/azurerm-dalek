@@ -50,5 +50,6 @@ func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Cleanup(
 		}
 		log.Printf("[DEBUG] Purged Soft-Deleted %s.", *workspaceId)
 	}
+
 	return nil
 }
