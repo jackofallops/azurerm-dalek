@@ -2,8 +2,8 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
@@ -27,9 +27,11 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 	protectedItemsClient := client.ResourceManager.RecoveryServicesProtectedItemClient
 	backupProtectedItemsClient := client.ResourceManager.RecoveryServicesBackupProtectedItemsClient
 
+	errs := make([]error, 0)
+
 	vaultsList, err := vaultsClient.ListBySubscriptionIdComplete(ctx, subscriptionId)
 	if err != nil {
-		return fmt.Errorf("listing Recovery Services Vault for %s: %+v", subscriptionId, err)
+		errs = append(errs, fmt.Errorf("listing Recovery Services Vault for %s: %+v", subscriptionId, err))
 	}
 
 	for _, vault := range vaultsList.Items {
@@ -39,7 +41,7 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 
 		vaultId, err := vaults.ParseVaultID(*vault.Id)
 		if err != nil {
-			log.Printf("[DEBUG] parsing id %q: %+v", *vault.Id, err)
+			errs = append(errs, fmt.Errorf("[DEBUG] parsing id %q: %+v", *vault.Id, err))
 			continue
 		}
 
@@ -74,20 +76,20 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 			}
 
 			if err := vaultsClient.UpdateThenPoll(ctx, *vaultId, patch, vaults.DefaultUpdateOperationOptions()); err != nil {
-				log.Printf("updating %s to not be mutable: %+v", vaultId, err)
+				errs = append(errs, fmt.Errorf("updating %s to not be mutable: %+v", vaultId, err))
 				continue
 			}
 		}
 
 		backupItemsVaultId, err := backupprotecteditems.ParseVaultID(*vault.Id)
 		if err != nil {
-			log.Printf("[DEBUG] parsing id %q: %+v", *vault.Id, err)
+			errs = append(errs, fmt.Errorf("[DEBUG] parsing id %q: %+v", *vault.Id, err))
 			continue
 		}
 
 		backupItems, err := backupProtectedItemsClient.List(ctx, *backupItemsVaultId, backupprotecteditems.ListOperationOptions{})
 		if err != nil || backupItems.Model == nil {
-			log.Printf("listing Backup Protected Items for %q: %+v", backupItemsVaultId.ID(), err)
+			errs = append(errs, fmt.Errorf("listing Backup Protected Items for %q: %+v", backupItemsVaultId.ID(), err))
 			continue
 		}
 
@@ -98,7 +100,7 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 
 			backupItemId, err := protecteditems.ParseProtectedItemID(*backupItem.Id)
 			if err != nil {
-				log.Printf("[DEBUG] parsing id %q: %+v", *backupItemId, err)
+				errs = append(errs, fmt.Errorf("[DEBUG] parsing id %q: %+v", *backupItemId, err))
 				continue
 			}
 
@@ -106,17 +108,17 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 			// and expect this cleaner to have to run multiple times to get everything cleared out
 			_, err = protectedItemsClient.Delete(ctx, *backupItemId)
 			if err != nil {
-				log.Printf("[DEBUG] deleting %q: %+v", backupItemId, err)
+				errs = append(errs, fmt.Errorf("[DEBUG] deleting %q: %+v", backupItemId, err))
 				continue
 			}
 		}
 
 		// Azure doesn't return an error when the vault fails deleting when using DeleteThenPoll so we'll just fire and forget and expect this to have to run multiple times to get everything cleaned out
 		if _, err := vaultsClient.Delete(ctx, *vaultId); err != nil {
-			log.Printf("[DEBUG] deleting %q: %+v", vaultId.ID(), err)
+			errs = append(errs, fmt.Errorf("[DEBUG] deleting %q: %+v", vaultId.ID(), err))
 			continue
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

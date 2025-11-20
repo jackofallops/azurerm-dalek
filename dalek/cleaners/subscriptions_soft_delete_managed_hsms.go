@@ -2,6 +2,7 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -20,6 +21,7 @@ func (p purgeSoftDeletedManagedHSMsInSubscriptionCleaner) Name() string {
 }
 
 func (p purgeSoftDeletedManagedHSMsInSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
+	errs := make([]error, 0)
 	softDeletedHSMs, err := client.ResourceManager.ManagedHSMsClient.ListDeletedComplete(ctx, subscriptionId)
 	if err != nil {
 		return fmt.Errorf("loading the Soft-Deleted Managed HSMs within %s: %+v", subscriptionId, err)
@@ -27,7 +29,8 @@ func (p purgeSoftDeletedManagedHSMsInSubscriptionCleaner) Cleanup(ctx context.Co
 	for _, hsm := range softDeletedHSMs.Items {
 		hsmId, err := managedhsms.ParseDeletedManagedHSMIDInsensitively(*hsm.Id)
 		if err != nil {
-			return fmt.Errorf("parsing Managed HSM ID %q: %+v", *hsm.Id, err)
+			errs = append(errs, fmt.Errorf("parsing Managed HSM ID %q: %+v", *hsm.Id, err))
+			continue
 		}
 		log.Printf("[DEBUG] Purging Soft-Deleted %s..", *hsmId)
 
@@ -37,12 +40,13 @@ func (p purgeSoftDeletedManagedHSMsInSubscriptionCleaner) Cleanup(ctx context.Co
 		}
 
 		log.Printf("[DEBUG] Purging Soft-Deleted %s..", *hsmId)
-		if err := client.ResourceManager.ManagedHSMsClient.PurgeDeletedThenPoll(ctx, *hsmId); err != nil {
-			return fmt.Errorf("purging %s: %+v", *hsmId, err)
+		if err = client.ResourceManager.ManagedHSMsClient.PurgeDeletedThenPoll(ctx, *hsmId); err != nil {
+			errs = append(errs, fmt.Errorf("purging %s: %+v", *hsmId, err))
+			continue
 		}
 
 		log.Printf("[DEBUG] Purged Soft-Deleted %s.", *hsmId)
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

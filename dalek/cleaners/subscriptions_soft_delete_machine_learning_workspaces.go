@@ -2,6 +2,7 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -22,6 +23,7 @@ func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Name() s
 
 func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	softDeletedWorkspaces, err := client.ResourceManager.MachineLearningWorkspacesClient.ListBySubscriptionComplete(ctx, subscriptionId, workspaces.DefaultListBySubscriptionOperationOptions())
+	errs := make([]error, 0)
 	if err != nil {
 		return fmt.Errorf("loading the Machine Learning Workspaces within %s: %+v", subscriptionId, err)
 	}
@@ -29,7 +31,8 @@ func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Cleanup(
 	for _, workspace := range softDeletedWorkspaces.Items {
 		workspaceId, err := workspaces.ParseWorkspaceIDInsensitively(*workspace.Id)
 		if err != nil {
-			return fmt.Errorf("parsing Machine Learning Workspace ID %q: %+v", *workspace.Id, err)
+			errs = append(errs, fmt.Errorf("parsing Machine Learning Workspace ID %q: %+v", *workspace.Id, err))
+			continue
 		}
 
 		if !strings.HasSuffix(workspaceId.ResourceGroupName, opts.Prefix) {
@@ -46,10 +49,11 @@ func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Cleanup(
 		purge := true
 		log.Printf("[DEBUG] Purging Soft-Deleted %s..", *workspaceId)
 		if err := client.ResourceManager.MachineLearningWorkspacesClient.DeleteThenPoll(ctx, *workspaceId, workspaces.DeleteOperationOptions{ForceToPurge: &purge}); err != nil {
-			return fmt.Errorf("purging %s: %+v", *workspaceId, err)
+			errs = append(errs, fmt.Errorf("purging %s: %+v", *workspaceId, err))
+			continue
 		}
 		log.Printf("[DEBUG] Purged Soft-Deleted %s.", *workspaceId)
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

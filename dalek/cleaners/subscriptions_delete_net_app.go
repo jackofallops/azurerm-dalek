@@ -2,12 +2,11 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
-	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
@@ -30,6 +29,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 	netAppCapcityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
 	netAppVolumeClient := client.ResourceManager.NetAppVolumeClient
 	netAppVolumeReplicationClient := client.ResourceManager.NetAppVolumeReplicationClient
+
+	errs := make([]error, 0)
 
 	accountLists, err := netAppAccountClient.AccountsListBySubscription(ctx, subscriptionId)
 	if err != nil {
@@ -62,7 +63,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 		capacityPoolList, err := netAppCapcityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
 		if err != nil {
-			return fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err)
+			errs = append(errs, fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err))
 		}
 
 		for _, capacityPool := range capacityPoolList.Items {
@@ -72,7 +73,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 			capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(*capacityPool.Id)
 			if err != nil {
-				return err
+				errs = append(errs, err)
 			}
 
 			if !opts.ActuallyDelete {
@@ -82,7 +83,8 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 			volumeList, err := netAppVolumeClient.ListComplete(ctx, *capacityPoolForVolumesId)
 			if err != nil {
-				return fmt.Errorf("listing NetApp Volumes for %s: %+v", capacityPoolForVolumesId, err)
+				errs = append(errs, fmt.Errorf("listing NetApp Volumes for %s: %+v", capacityPoolForVolumesId, err))
+				continue
 			}
 
 			for _, volume := range volumeList.Items {
@@ -92,62 +94,57 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 				volumeId, err := volumes.ParseVolumeID(*volume.Id)
 				if err != nil {
-					return err
-				}
-
-				if !opts.ActuallyDelete {
-					log.Printf("[DEBUG] Would have deleted %s..", volumeId)
+					errs = append(errs, err)
 					continue
 				}
 
 				volumeReplicationId, err := volumesreplication.ParseVolumeID(*volume.Id)
 				if err != nil {
+					errs = append(errs, err)
 					continue
 				}
 
-				if resp, err := netAppVolumeReplicationClient.VolumesDeleteReplication(ctx, *volumeReplicationId); err != nil {
-					if !response.WasNotFound(resp.HttpResponse) {
-						return fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err)
-					}
+				if err := netAppVolumeReplicationClient.VolumesDeleteReplicationThenPoll(ctx, *volumeReplicationId); err != nil {
+					errs = append(errs, fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err))
+					continue
 				}
-
-				// sleeping because there is some eventual consistency for when the replication decouples from the volume
-				time.Sleep(30 * time.Second)
 
 				forceDelete := true
 				// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-				if _, err = netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
+				if err = netAppVolumeClient.DeleteThenPoll(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
 					// Potential Eventual Consistency Issues so we'll just log and move on
-					log.Printf("[DEBUG] Unable to delete %s: %+v", volumeId, err)
+					errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", volumeId, err))
+					continue
 				}
 			}
 
 			capacityPoolId, err := capacitypools.ParseCapacityPoolID(*capacityPool.Id)
 			if err != nil {
-				return err
+				errs = append(errs, err)
+				continue
 			}
 
 			// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-			if _, err = netAppCapcityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
+			if err = netAppCapcityPoolClient.PoolsDeleteThenPoll(ctx, *capacityPoolId); err != nil {
 				// Potential Eventual Consistency Issues so we'll just log and move on
-				log.Printf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err)
+				errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err))
+				continue
 			}
-
-			// sleeping because there is some eventual consistency for when the capacity pool decouples from the account
-			time.Sleep(30 * time.Second)
 		}
 
 		accountId, err := netappaccounts.ParseNetAppAccountID(*account.Id)
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 
 		// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
-		if _, err = netAppAccountClient.AccountsDelete(ctx, *accountId); err != nil {
+		if err = netAppAccountClient.AccountsDeleteThenPoll(ctx, *accountId); err != nil {
 			// Potential Eventual Consistency Issues so we'll just log and move on
-			log.Printf("[DEBUG] Unable to delete %s: %+v", accountId, err)
+			errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", accountId, err))
+			continue
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

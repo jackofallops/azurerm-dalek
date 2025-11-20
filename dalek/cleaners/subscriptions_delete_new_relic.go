@@ -2,6 +2,7 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -22,9 +23,11 @@ func (p deleteNewRelicSubscriptionCleaner) Name() string {
 func (p deleteNewRelicSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	newRelicMonitorClient := client.ResourceManager.NewRelicMonitorClient
 
+	errs := make([]error, 0)
+
 	monitorsLists, err := newRelicMonitorClient.ListBySubscriptionComplete(ctx, subscriptionId)
 	if err != nil {
-		return fmt.Errorf("listing New Relic Monitors for %s: %+v", subscriptionId, err)
+		errs = append(errs, fmt.Errorf("listing New Relic Monitors for %s: %+v", subscriptionId, err))
 	}
 
 	for _, monitor := range monitorsLists.Items {
@@ -34,7 +37,7 @@ func (p deleteNewRelicSubscriptionCleaner) Cleanup(ctx context.Context, subscrip
 
 		monitorId, err := monitors.ParseMonitorID(*monitor.Id)
 		if err != nil {
-			log.Printf("[DEBUG] Parsing monitor Id %q: %+v", *monitor.Id, err)
+			errs = append(errs, fmt.Errorf("[DEBUG] Parsing monitor Id %q: %+v", *monitor.Id, err))
 			continue
 		}
 
@@ -44,15 +47,15 @@ func (p deleteNewRelicSubscriptionCleaner) Cleanup(ctx context.Context, subscrip
 		}
 
 		if monitor.Properties.UserInfo == nil || monitor.Properties.UserInfo.EmailAddress == nil {
-			log.Printf("[DEBUG] `user` not found for %s..", monitorId)
+			errs = append(errs, fmt.Errorf("[DEBUG] `user` not found for %s", monitorId))
 			continue
 		}
 
 		if err = newRelicMonitorClient.DeleteThenPoll(ctx, *monitorId, monitors.DeleteOperationOptions{UserEmail: monitor.Properties.UserInfo.EmailAddress}); err != nil {
-			log.Printf("[DEBUG] deleting %s: %+v", monitorId, err)
+			errs = append(errs, fmt.Errorf("[DEBUG] deleting %s: %+v", monitorId, err))
 			continue
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

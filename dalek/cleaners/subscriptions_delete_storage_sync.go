@@ -2,6 +2,7 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -27,6 +28,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 	storageSyncGroupClient := client.ResourceManager.StorageSyncGroupClient
 	storageSyncCloudEndpointClient := client.ResourceManager.StorageSyncCloudEndpointClient
 
+	errs := make([]error, 0)
+
 	storageSyncList, err := storageSyncClient.StorageSyncServicesListBySubscription(ctx, subscriptionId)
 	if err != nil {
 		return fmt.Errorf("listing storage syncs: %+v", err)
@@ -43,7 +46,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 
 		storageSyncForGroupId, err := syncgroupresource.ParseStorageSyncServiceID(*storageSync.Id)
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 
 		if !strings.HasPrefix(storageSyncForGroupId.ResourceGroupName, opts.Prefix) {
@@ -58,7 +62,7 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 
 		groupList, err := storageSyncGroupClient.SyncGroupsListByStorageSyncService(ctx, *storageSyncForGroupId)
 		if err != nil {
-			return fmt.Errorf("listing storage sync groups for %s: %+v", storageSyncForGroupId, err)
+			errs = append(errs, fmt.Errorf("listing storage sync groups for %s: %+v", storageSyncForGroupId, err))
 		}
 
 		if groupList.Model == nil || groupList.Model.Value == nil {
@@ -72,7 +76,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 
 			groupIdForCloudEndpoint, err := cloudendpointresource.ParseSyncGroupID(*group.Id)
 			if err != nil {
-				return err
+				errs = append(errs, err)
+				continue
 			}
 
 			if !opts.ActuallyDelete {
@@ -82,7 +87,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 
 			cloudEndpointList, err := storageSyncCloudEndpointClient.CloudEndpointsListBySyncGroup(ctx, *groupIdForCloudEndpoint)
 			if err != nil {
-				return fmt.Errorf("listing cloud endpoints for %s: %+v", groupIdForCloudEndpoint, err)
+				errs = append(errs, fmt.Errorf("listing cloud endpoints for %s: %+v", groupIdForCloudEndpoint, err))
+				continue
 			}
 
 			if cloudEndpointList.Model == nil || cloudEndpointList.Model.Value == nil {
@@ -96,7 +102,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 
 				endpointId, err := cloudendpointresource.ParseCloudEndpointID(*endpoint.Id)
 				if err != nil {
-					return err
+					errs = append(errs, err)
+					continue
 				}
 
 				if !opts.ActuallyDelete {
@@ -105,28 +112,31 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 				}
 
 				if err = storageSyncCloudEndpointClient.CloudEndpointsDeleteThenPoll(ctx, *endpointId); err != nil {
-					return fmt.Errorf("deleting %s: %+v", endpointId, err)
+					errs = append(errs, fmt.Errorf("deleting %s: %+v", endpointId, err))
+					continue
 				}
 			}
 
 			groupId, err := syncgroupresource.ParseSyncGroupID(*group.Id)
 			if err != nil {
-				return err
+				errs = append(errs, err)
+				continue
 			}
 
 			if _, err = storageSyncGroupClient.SyncGroupsDelete(ctx, *groupId); err != nil {
-				return fmt.Errorf("deleting %s: %+v", groupId, err)
+				errs = append(errs, fmt.Errorf("deleting %s: %+v", groupId, err))
 			}
 		}
 
 		storageSyncId, err := storagesyncservicesresource.ParseStorageSyncServiceID(*storageSync.Id)
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 		if err = storageSyncClient.StorageSyncServicesDeleteThenPoll(ctx, *storageSyncId); err != nil {
-			return fmt.Errorf("deleting %s: %+v", storageSyncId, err)
+			errs = append(errs, fmt.Errorf("deleting %s: %+v", storageSyncId, err))
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
