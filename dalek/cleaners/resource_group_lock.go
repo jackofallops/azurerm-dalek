@@ -54,5 +54,6 @@ func (removeLocksFromResourceGroupCleaner) Cleanup(ctx context.Context, id commo
 func (removeLocksFromResourceGroupCleaner) ResourceTypes() []string {
 	return []string{
 		"Microsoft.Authorization/locks",
+		"Microsoft.DevTestLab/labs",
 	}
 }
