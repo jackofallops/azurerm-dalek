@@ -151,9 +151,9 @@ resources
 	// If locks are present in the provided resourceTypes then we need to check for their existence
 	// using the ResourceManager client.
 	if slices.Contains(resourceTypes, "Microsoft.Authorization/locks") {
-		locks, locksErr := client.ResourceManager.LocksClient.ListAtResourceGroupLevel(ctx, id, managementlocks.DefaultListAtResourceGroupLevelOperationOptions())
-		if locksErr != nil {
-			return nil, fmt.Errorf("performing Locks query for ResourceGroup %s: %+v", id.ResourceGroupName, locksErr)
+		locks, err := client.ResourceManager.LocksClient.ListAtResourceGroupLevel(ctx, id, managementlocks.DefaultListAtResourceGroupLevelOperationOptions())
+		if err != nil {
+			return nil, fmt.Errorf("performing Locks query for ResourceGroup %s: %+v", id.ResourceGroupName, err)
 		}
 		if locks.Model != nil && len(*locks.Model) > 0 {
 			// if locks exist, flip to true
