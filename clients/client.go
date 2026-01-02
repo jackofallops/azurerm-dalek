@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-05-01/subnets"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-05-01/virtualnetworks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
@@ -28,6 +30,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
+	webResourceProviders "github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders"
 	"github.com/hashicorp/go-azure-sdk/sdk/auth"
 	authWrapper "github.com/hashicorp/go-azure-sdk/sdk/auth/autorest"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
@@ -61,6 +64,8 @@ type ResourceManagerClient struct {
 	NetAppVolumeClient                         *volumes.VolumesClient
 	NetAppVolumeReplicationClient              *volumesreplication.VolumesReplicationClient
 	NewRelicMonitorClient                      *monitors.MonitorsClient
+	NetworkClient                              *virtualnetworks.VirtualNetworksClient
+	NetworkSubnetClient                        *subnets.SubnetsClient
 	NotificationHubNamespaceClient             *namespaces.NamespacesClient
 	PaloAlto                                   *paloAltoNetworks.Client
 	ResourceGraphClient                        *resourceGraph.ResourcesClient
@@ -72,6 +77,7 @@ type ResourceManagerClient struct {
 	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
 	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
 	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
+	WebResourceProviderClient                  *webResourceProviders.ResourceProvidersClient
 }
 
 type Credentials struct {
@@ -202,6 +208,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	eventHubNameSpaceClient.Client.Authorizer = resourceManagerAuthorizer
 
+	webResourceProvidersClient, err := webResourceProviders.NewResourceProvidersClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building WebResourceProviders client: %+v", err)
+	}
+	webResourceProvidersClient.Client.Authorizer = resourceManagerAuthorizer
+
 	locksClient, err := managementlocks.NewManagementLocksClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building ManagementLocks client: %+v", err)
@@ -250,6 +262,18 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	netAppVolumeReplicationClient.Client.Authorizer = resourceManagerAuthorizer
 
+	networkClient, err := virtualnetworks.NewVirtualNetworksClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building Network Client: %+v", err)
+	}
+	networkClient.Client.Authorizer = resourceManagerAuthorizer
+
+	networkSubnetClient, err := subnets.NewSubnetsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building Network Subnets Client: %+v", err)
+	}
+	networkSubnetClient.Client.Authorizer = resourceManagerAuthorizer
+
 	newRelicMonitorClient, err := monitors.NewMonitorsClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building New Relic Monitor Client: %+v", err)
@@ -276,15 +300,9 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	recoveryServicesVaultClient.Client.Authorizer = resourceManagerAuthorizer
 
 	recoveryServicesProtectedItemClient := protecteditems.NewProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("building Recovery Services Protected Item client: %+v", err)
-	}
 	recoveryServicesProtectedItemClient.Client.Authorizer = autoRestAuthorizer
 
 	recoveryServicesBackupProtectedItemsClient := backupprotecteditems.NewBackupProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("building Recovery Services Backup Protected Items client: %+v", err)
-	}
 	recoveryServicesBackupProtectedItemsClient.Client.Authorizer = autoRestAuthorizer
 
 	resourceGraphClient, err := resourceGraph.NewResourcesClientWithBaseURI(environment.ResourceManager)
@@ -336,6 +354,8 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		NetAppCapacityPoolClient:                   netAppCapacityPoolClient,
 		NetAppVolumeClient:                         netAppVolumeClient,
 		NetAppVolumeReplicationClient:              netAppVolumeReplicationClient,
+		NetworkClient:                              networkClient,
+		NetworkSubnetClient:                        networkSubnetClient,
 		NewRelicMonitorClient:                      newRelicMonitorClient,
 		NotificationHubNamespaceClient:             notificationHubNamespacesClient,
 		PaloAlto:                                   paloAltoClient,
@@ -348,5 +368,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		StorageSyncClient:                          storageSyncClient,
 		StorageSyncGroupClient:                     storageSyncGroupClient,
 		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
+		WebResourceProviderClient:                  webResourceProvidersClient,
 	}, nil
 }
