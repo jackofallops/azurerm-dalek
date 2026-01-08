@@ -17,6 +17,7 @@ var ResourceGroupCleaners = []ResourceGroupCleaner{
 	notificationHubNamespacesCleaner{},
 	paloAltoLocalRulestackCleaner{},
 	serviceBusNamespaceBreakPairingCleaner{},
+	networkSubnetPropertiesCleaner{},
 }
 
 type ResourceGroupCleaner interface {
