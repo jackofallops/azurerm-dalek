@@ -46,7 +46,7 @@ func (networkSubnetPropertiesCleaner) Cleanup(ctx context.Context, id commonids.
 				for _, sub := range *subnetList.Model {
 					// Updates/deletes are not allowed on a subnet if there are existing orphan network integragions.
 					// Call a special purge API that will clean up any integrations before we attempt to update.
-					log.Printf("[DEBUG]   Purging unused network integrations for Network Subnet %s", *sub.Id)
+					log.Printf("[DEBUG] Purging unused network integrations for Network Subnet %s", *sub.Id)
 
 					webProviderLocationId := resourceproviders.ProviderLocationId{
 						SubscriptionId: id.SubscriptionId,
@@ -59,11 +59,11 @@ func (networkSubnetPropertiesCleaner) Cleanup(ctx context.Context, id commonids.
 						log.Printf("[ERROR] purging unused network integrations for Subnet %s: %+v", *sub.Id, err)
 					}
 
-					log.Printf("[DEBUG]   Updating default properties for Network Subnet %s", *sub.Id)
+					log.Printf("[DEBUG] Updating default properties for Network Subnet %s", *sub.Id)
 
 					subnetId, err := commonids.ParseSubnetID(*sub.Id)
 					if err != nil {
-						return fmt.Errorf("parsing Subnet ID %s: %+v", *sub.Id, err)
+						return err
 					}
 
 					// update delegation and private policies to their default values (disabled)
