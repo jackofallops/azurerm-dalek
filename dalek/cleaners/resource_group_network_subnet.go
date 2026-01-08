@@ -93,7 +93,7 @@ func (networkSubnetPropertiesCleaner) ResourceTypes() []string {
 // https://learn.microsoft.com/en-us/azure/app-service/overview-vnet-integration#method-1-purging-orphaned-service-association-links-sal
 // The purge API has not been added to official swagger, so does not exist as client in SDK.
 // This helper function will use existing Web ResourceProviders SDK to call the appropriate API.
-func purgeUnusedVnetIntegrations(ctx context.Context, locationId resourceproviders.ProviderLocationId, subnetId string, client * resourceproviders.ResourceProvidersClient) (err error) {
+func purgeUnusedVnetIntegrations(ctx context.Context, locationId resourceproviders.ProviderLocationId, subnetId string, client *resourceproviders.ResourceProvidersClient) (err error) {
 	opts := baseSdkClient.RequestOptions{
 		ContentType: "application/json; charset=utf-8",
 		ExpectedStatusCodes: []int{
@@ -122,7 +122,6 @@ func purgeUnusedVnetIntegrations(ctx context.Context, locationId resourceprovide
 
 	// do not need the response here, just the status handled by the error condition
 	_, err = req.Execute(ctx)
-
 	if err != nil {
 		return
 	}
