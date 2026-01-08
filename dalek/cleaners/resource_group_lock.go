@@ -63,7 +63,7 @@ func (removeLocksFromResourceGroupCleaner) Cleanup(ctx context.Context, id commo
 				log.Printf("[ERROR] Polling for deletion is broken for lock %s: %+v", *lockId, err)
 				continue
 			}
-			log.Printf("[DEBUG]   Lock delete is complete for %s", *lockId)
+			log.Printf("[DEBUG] Lock delete is complete for %s", *lockId)
 		}
 	}
 	return nil
