@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
@@ -144,6 +146,21 @@ resources
 	}
 
 	containsItems := len(itemsRaw) > 0
+
+	// ResourceGraph queries do not return locks (Microsoft.Authorization/locks).
+	// If locks are present in the provided resourceTypes then we need to check for their existence
+	// using the ResourceManager client.
+	if slices.Contains(resourceTypes, "Microsoft.Authorization/locks") {
+		locks, err := client.ResourceManager.LocksClient.ListAtResourceGroupLevel(ctx, id, managementlocks.DefaultListAtResourceGroupLevelOperationOptions())
+		if err != nil {
+			return nil, fmt.Errorf("performing Locks query for ResourceGroup %s: %+v", id.ResourceGroupName, err)
+		}
+		if locks.Model != nil && len(*locks.Model) > 0 {
+			// if locks exist, flip to true
+			containsItems = true
+		}
+	}
+
 	return pointer.To(containsItems), nil
 }
 
