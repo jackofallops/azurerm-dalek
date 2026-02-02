@@ -37,9 +37,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Hour)
 	defer cancel()
 	if err := run(ctx, credentials, opts); err != nil {
+		log.Println("[DEBUG] Printing out all errors....")
 		log.Print(err.Error())
 		os.Exit(1) // nolint gocritic
 	}
+	log.Println("[DEBUG] No Errors occured...")
 }
 
 func run(ctx context.Context, credentials clients.Credentials, opts options.Options) error {
