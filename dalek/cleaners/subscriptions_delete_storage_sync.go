@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/registeredserverresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
 	"github.com/jackofallops/azurerm-dalek/clients"
@@ -27,6 +28,7 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 	storageSyncClient := client.ResourceManager.StorageSyncClient
 	storageSyncGroupClient := client.ResourceManager.StorageSyncGroupClient
 	storageSyncCloudEndpointClient := client.ResourceManager.StorageSyncCloudEndpointClient
+	storageSyncRegisteredServerClient := client.ResourceManager.StorageSyncRegisteredServerClient
 
 	errs := make([]error, 0)
 
@@ -44,25 +46,60 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 			continue
 		}
 
-		storageSyncForGroupId, err := syncgroupresource.ParseStorageSyncServiceID(*storageSync.Id)
+		id, err := storagesyncservicesresource.ParseStorageSyncServiceID(*storageSync.Id)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
 
-		if !strings.HasPrefix(storageSyncForGroupId.ResourceGroupName, opts.Prefix) {
-			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", *storageSyncForGroupId, opts.Prefix)
+		if !strings.HasPrefix(id.ResourceGroupName, opts.Prefix) {
+			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", *id, opts.Prefix)
 			continue
 		}
+
+		// Storage Sync Registered Servers Cleanup
+
+		registeredServers, err := storageSyncRegisteredServerClient.RegisteredServersListByStorageSyncService(ctx, registeredserverresource.StorageSyncServiceId(*id))
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		if registeredServers.Model == nil || registeredServers.Model.Value == nil {
+			continue
+		}
+
+		for _, s := range *registeredServers.Model.Value {
+			if s.Id == nil {
+				continue
+			}
+
+			registeredServerID, err := registeredserverresource.ParseRegisteredServerID(*s.Id)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			if !opts.ActuallyDelete {
+				log.Printf("[DEBUG] Would have deleted %s", registeredServerID)
+				continue
+			}
+
+			if err := storageSyncRegisteredServerClient.RegisteredServersDeleteThenPoll(ctx, *registeredServerID); err != nil {
+				errs = append(errs, fmt.Errorf("deleting %s: %w", registeredServerID, err))
+			}
+		}
+
+		// Storage Sync Group Cleanup
 
 		if !opts.ActuallyDelete {
-			log.Printf("[DEBUG] Would have deleted %s..", storageSyncForGroupId)
+			log.Printf("[DEBUG] Would have deleted %s..", id)
 			continue
 		}
 
-		groupList, err := storageSyncGroupClient.SyncGroupsListByStorageSyncService(ctx, *storageSyncForGroupId)
+		groupList, err := storageSyncGroupClient.SyncGroupsListByStorageSyncService(ctx, syncgroupresource.StorageSyncServiceId(*id))
 		if err != nil {
-			errs = append(errs, fmt.Errorf("listing storage sync groups for %s: %+v", storageSyncForGroupId, err))
+			errs = append(errs, fmt.Errorf("listing storage sync groups for %s: %+v", id, err))
 		}
 
 		if groupList.Model == nil || groupList.Model.Value == nil {
@@ -127,6 +164,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 				errs = append(errs, fmt.Errorf("deleting %s: %+v", groupId, err))
 			}
 		}
+
+		// Storage Sync Service Cleanup
 
 		storageSyncId, err := storagesyncservicesresource.ParseStorageSyncServiceID(*storageSync.Id)
 		if err != nil {
