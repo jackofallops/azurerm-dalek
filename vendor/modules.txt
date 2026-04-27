@@ -117,6 +117,7 @@ github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview
 github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/topics
 github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/topicsauthorizationrule
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource
+github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/registeredserverresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource
 github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders

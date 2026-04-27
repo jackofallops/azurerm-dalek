@@ -28,6 +28,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
 	serviceBus "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/registeredserverresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
 	webResourceProviders "github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders"
@@ -75,8 +76,9 @@ type ResourceManagerClient struct {
 	RecoveryServicesBackupProtectedItemsClient *backupprotecteditems.BackupProtectedItemsClient
 	ServiceBus                                 *serviceBus.Client
 	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
-	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
 	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
+	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
+	StorageSyncRegisteredServerClient          *registeredserverresource.RegisteredServerResourceClient
 	WebResourceProviderClient                  *webResourceProviders.ResourceProvidersClient
 }
 
@@ -342,6 +344,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	storageSyncCloudEndpointClient.Client.Authorizer = resourceManagerAuthorizer
 
+	storageSyncRegisteredServerClient, err := registeredserverresource.NewRegisteredServerResourceClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building RegisteredServerResource Client: %+v", err)
+	}
+	storageSyncRegisteredServerClient.Client.Authorizer = resourceManagerAuthorizer
+
 	return &ResourceManagerClient{
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
@@ -368,6 +376,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		StorageSyncClient:                          storageSyncClient,
 		StorageSyncGroupClient:                     storageSyncGroupClient,
 		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
+		StorageSyncRegisteredServerClient:          storageSyncRegisteredServerClient,
 		WebResourceProviderClient:                  webResourceProvidersClient,
 	}, nil
 }
