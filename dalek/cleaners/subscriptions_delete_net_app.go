@@ -105,16 +105,14 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				}
 
 				if err := netAppVolumeReplicationClient.VolumesDeleteReplicationThenPoll(ctx, *volumeReplicationId); err != nil {
-					errs = append(errs, fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err))
-					continue
+					log.Printf("[DEBUG] Unable to delete %s: %+v", volumeReplicationId, err)
 				}
 
 				forceDelete := true
 				// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
 				if _, err = netAppVolumeClient.Delete(ctx, *volumeId, volumes.DeleteOperationOptions{ForceDelete: &forceDelete}); err != nil {
 					// Potential Eventual Consistency Issues so we'll just log and move on
-					errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", volumeId, err))
-					continue
+					log.Printf("[DEBUG] Unable to delete %s: %+v", volumeId, err)
 				}
 			}
 
@@ -127,8 +125,7 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			// the netapp api doesn't error if the delete fails so we'll just fire and forget as to not break the dalek
 			if _, err = netAppCapcityPoolClient.PoolsDelete(ctx, *capacityPoolId); err != nil {
 				// Potential Eventual Consistency Issues so we'll just log and move on
-				errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err))
-				continue
+				log.Printf("[DEBUG] Unable to delete %s: %+v", capacityPoolId, err)
 			}
 		}
 
