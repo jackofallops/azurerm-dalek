@@ -56,7 +56,7 @@ func (graphServicesAccountCleaner) Cleanup(ctx context.Context, id commonids.Res
 			return fmt.Errorf("updating %s: %w", graphServiceAccountID, err)
 		}
 
-		// In the rare event that Azure returns a 500, this would poll until timeout, to prevent polling for ~6 hours use a new context that is much shorter.
+		// In the rare event that Azure returns a 500, this would retry until timeout, to prevent polling for ~6 hours use a new context that is much shorter.
 		ctxForDelete, cancel := context.WithTimeout(ctx, time.Minute*1)
 		if _, err := c.AccountsDelete(ctxForDelete, *graphServiceAccountID); err != nil {
 			cancel()
