@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	datafactory "github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01"
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
 	eventhubNamespace "github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2022-01-01-preview/namespaces"
@@ -53,6 +54,7 @@ type MicrosoftGraphClient struct {
 }
 
 type ResourceManagerClient struct {
+	DataFactory                                *datafactory.Client
 	DataProtection                             *dataProtection.Client
 	EventHubDisasterRecoveryClient             *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
 	EventHubNameSpaceClient                    *eventhubNamespace.NamespacesClient
@@ -189,6 +191,13 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	resourceManagerEndpoint, ok := environment.ResourceManager.Endpoint()
 	if !ok {
 		return nil, fmt.Errorf("environment %q was missing a Resource Manager endpoint", environment.Name)
+	}
+
+	dataFactoryClient, err := datafactory.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
+		c.Authorizer = resourceManagerAuthorizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building Data Factory Client: %+v", err)
 	}
 
 	dataProtectionClient, err := dataProtection.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
@@ -351,6 +360,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	storageSyncRegisteredServerClient.Client.Authorizer = resourceManagerAuthorizer
 
 	return &ResourceManagerClient{
+		DataFactory:                                dataFactoryClient,
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
 		EventHubNameSpaceClient:                    eventHubNameSpaceClient,
