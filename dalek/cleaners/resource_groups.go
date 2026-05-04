@@ -14,6 +14,7 @@ var ResourceGroupCleaners = []ResourceGroupCleaner{
 	removeLocksFromResourceGroupCleaner{},
 	removeDataProtectionFromResourceGroupCleaner{},
 	eventhubNamespaceBreakPairingCleaner{},
+	graphServicesAccountCleaner{},
 	notificationHubNamespacesCleaner{},
 	paloAltoLocalRulestackCleaner{},
 	serviceBusNamespaceBreakPairingCleaner{},
