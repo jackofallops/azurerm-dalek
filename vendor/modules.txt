@@ -55,6 +55,29 @@ github.com/hashicorp/go-azure-helpers/resourcemanager/systemdata
 github.com/hashicorp/go-azure-helpers/resourcemanager/zones
 # github.com/hashicorp/go-azure-sdk/resource-manager v0.20250110.1074108
 ## explicit; go 1.22
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/activityruns
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/changedatacapture
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/credentials
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/dataflowdebugsession
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/dataflows
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/datasets
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/exposurecontrol
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/factories
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/globalparameters
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/integrationruntimenodes
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/integrationruntimeobjectmetadata
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/integrationruntimes
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/linkedservices
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/managedprivateendpoints
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/managedvirtualnetworks
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/pipelineruns
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/pipelines
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/privateendpointconnections
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/privatelinkresources
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/trigger
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/triggerruns
+github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/triggers
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/azurebackupjob
 github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01/azurebackupjobs

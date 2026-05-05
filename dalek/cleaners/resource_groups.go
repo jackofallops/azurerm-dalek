@@ -18,6 +18,7 @@ var ResourceGroupCleaners = []ResourceGroupCleaner{
 	paloAltoLocalRulestackCleaner{},
 	serviceBusNamespaceBreakPairingCleaner{},
 	networkSubnetPropertiesCleaner{},
+	dataFactoryCleaner{},
 }
 
 type ResourceGroupCleaner interface {
