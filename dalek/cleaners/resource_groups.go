@@ -16,6 +16,7 @@ var ResourceGroupCleaners = []ResourceGroupCleaner{
 	eventhubNamespaceBreakPairingCleaner{},
 	notificationHubNamespacesCleaner{},
 	paloAltoLocalRulestackCleaner{},
+	sapVirtualInstance{},
 	serviceBusNamespaceBreakPairingCleaner{},
 	networkSubnetPropertiesCleaner{},
 	dataFactoryCleaner{},

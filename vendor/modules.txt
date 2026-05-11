@@ -55,6 +55,12 @@ github.com/hashicorp/go-azure-helpers/resourcemanager/systemdata
 github.com/hashicorp/go-azure-helpers/resourcemanager/zones
 # github.com/hashicorp/go-azure-sdk/resource-manager v0.20250110.1074108
 ## explicit; go 1.22
+github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01
+github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01/denyassignments
+github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01/permissions
+github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01/provideroperationsmetadata
+github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01/roleassignments
+github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01/roledefinitions
 github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01
 github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/activityruns
 github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01/changedatacapture
@@ -144,6 +150,11 @@ github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/regist
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource
 github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders
+github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01
+github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapapplicationserverinstances
+github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapcentralserverinstances
+github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapdatabaseinstances
+github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapvirtualinstances
 # github.com/hashicorp/go-azure-sdk/sdk v0.20250110.1074108
 ## explicit; go 1.22
 github.com/hashicorp/go-azure-sdk/sdk/auth

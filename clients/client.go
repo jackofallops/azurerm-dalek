@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	authorization "github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01"
 	datafactory "github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01"
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
@@ -33,6 +34,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
 	webResourceProviders "github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders"
+	workloads "github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01"
 	"github.com/hashicorp/go-azure-sdk/sdk/auth"
 	authWrapper "github.com/hashicorp/go-azure-sdk/sdk/auth/autorest"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
@@ -54,6 +56,7 @@ type MicrosoftGraphClient struct {
 }
 
 type ResourceManagerClient struct {
+	AuthorizationClient                        *authorization.Client
 	DataFactory                                *datafactory.Client
 	DataProtection                             *dataProtection.Client
 	EventHubDisasterRecoveryClient             *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
@@ -82,6 +85,7 @@ type ResourceManagerClient struct {
 	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
 	StorageSyncRegisteredServerClient          *registeredserverresource.RegisteredServerResourceClient
 	WebResourceProviderClient                  *webResourceProviders.ResourceProvidersClient
+	WorkloadsClient                            *workloads.Client
 }
 
 type Credentials struct {
@@ -191,6 +195,15 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	resourceManagerEndpoint, ok := environment.ResourceManager.Endpoint()
 	if !ok {
 		return nil, fmt.Errorf("environment %q was missing a Resource Manager endpoint", environment.Name)
+	}
+
+	// Clients
+
+	authorizationClient, err := authorization.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
+		c.Authorizer = resourceManagerAuthorizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building Authorization Client: %+v", err)
 	}
 
 	dataFactoryClient, err := datafactory.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
@@ -359,7 +372,15 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	storageSyncRegisteredServerClient.Client.Authorizer = resourceManagerAuthorizer
 
+	workloadsClient, err := workloads.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
+		c.Authorizer = resourceManagerAuthorizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building Workloads Client: %+v", err)
+	}
+
 	return &ResourceManagerClient{
+		AuthorizationClient:                        authorizationClient,
 		DataFactory:                                dataFactoryClient,
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
@@ -388,5 +409,6 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
 		StorageSyncRegisteredServerClient:          storageSyncRegisteredServerClient,
 		WebResourceProviderClient:                  webResourceProvidersClient,
+		WorkloadsClient:                            workloadsClient,
 	}, nil
 }
