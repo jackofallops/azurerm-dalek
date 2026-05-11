@@ -44,6 +44,7 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/hashicorp/go-azure-helpers/lang/dates
 github.com/hashicorp/go-azure-helpers/lang/pointer
 github.com/hashicorp/go-azure-helpers/lang/response
+github.com/hashicorp/go-azure-helpers/polling
 github.com/hashicorp/go-azure-helpers/resourcemanager/commonids
 github.com/hashicorp/go-azure-helpers/resourcemanager/edgezones
 github.com/hashicorp/go-azure-helpers/resourcemanager/features
@@ -130,7 +131,9 @@ github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29/p
 github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29/prerules
 github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults
 github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotecteditems
+github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotectioncontainers
 github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems
+github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protectioncontainers
 github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources
 github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks
 github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups

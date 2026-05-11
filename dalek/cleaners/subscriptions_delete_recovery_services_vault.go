@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotecteditems"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotectioncontainers"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protectioncontainers"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
@@ -26,6 +28,8 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 	vaultsClient := client.ResourceManager.RecoveryServicesVaultClient
 	protectedItemsClient := client.ResourceManager.RecoveryServicesProtectedItemClient
 	backupProtectedItemsClient := client.ResourceManager.RecoveryServicesBackupProtectedItemsClient
+	backupProtectionContainersClient := client.ResourceManager.RecoveryServicesBackupProtectionContainers
+	protectionContainersClient := client.ResourceManager.RecoveryServicesProtectionContainers
 
 	errs := make([]error, 0)
 
@@ -109,6 +113,30 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 			_, err = protectedItemsClient.Delete(ctx, *backupItemId)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("[DEBUG] deleting %q: %+v", backupItemId, err))
+				continue
+			}
+		}
+
+		// Unregister Protection Containers, prerequisite to vault deletion
+		storageContainers, err := backupProtectionContainersClient.ListComplete(ctx, backupprotectioncontainers.VaultId(*backupItemsVaultId), backupprotectioncontainers.ListOperationOptions{Filter: pointer.To("backupManagementType eq 'AzureStorage'")})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("listing %s: %w", *backupItemsVaultId, err))
+			continue
+		}
+
+		for _, sc := range storageContainers.Items {
+			if sc.Id == nil {
+				continue
+			}
+
+			scID, err := protectioncontainers.ParseProtectionContainerID(*sc.Id)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			if _, err := protectionContainersClient.Unregister(ctx, *scID); err != nil {
+				errs = append(errs, fmt.Errorf("unregistering %s: %w", scID, err))
 				continue
 			}
 		}
