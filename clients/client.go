@@ -10,6 +10,7 @@ import (
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
 	eventhubNamespace "github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2022-01-01-preview/namespaces"
+	graphservices "github.com/hashicorp/go-azure-sdk/resource-manager/graphservices/2023-04-13"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/keyvault/2023-07-01/managedhsms"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2024-10-01/workspaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
@@ -61,6 +62,7 @@ type ResourceManagerClient struct {
 	DataProtection                             *dataProtection.Client
 	EventHubDisasterRecoveryClient             *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
 	EventHubNameSpaceClient                    *eventhubNamespace.NamespacesClient
+	GraphServicesClient                        *graphservices.Client
 	LocksClient                                *managementlocks.ManagementLocksClient
 	MachineLearningWorkspacesClient            *workspaces.WorkspacesClient
 	ManagedHSMsClient                          *managedhsms.ManagedHsmsClient
@@ -232,6 +234,13 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	eventHubNameSpaceClient.Client.Authorizer = resourceManagerAuthorizer
 
+	graphServicesClient, err := graphservices.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
+		c.Authorizer = resourceManagerAuthorizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building Graph Services client: %+v", err)
+	}
+
 	webResourceProvidersClient, err := webResourceProviders.NewResourceProvidersClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building WebResourceProviders client: %+v", err)
@@ -385,6 +394,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
 		EventHubNameSpaceClient:                    eventHubNameSpaceClient,
+		GraphServicesClient:                        graphServicesClient,
 		LocksClient:                                locksClient,
 		MachineLearningWorkspacesClient:            workspacesClient,
 		ManagedHSMsClient:                          managedHsmsClient,
