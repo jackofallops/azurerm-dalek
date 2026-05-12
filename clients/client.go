@@ -25,7 +25,9 @@ import (
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotecteditems"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotectioncontainers"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protectioncontainers"
 	resourceGraph "github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
@@ -81,6 +83,8 @@ type ResourceManagerClient struct {
 	RecoveryServicesVaultClient                *vaults.VaultsClient
 	RecoveryServicesProtectedItemClient        *protecteditems.ProtectedItemsClient
 	RecoveryServicesBackupProtectedItemsClient *backupprotecteditems.BackupProtectedItemsClient
+	RecoveryServicesBackupProtectionContainers *backupprotectioncontainers.BackupProtectionContainersClient
+	RecoveryServicesProtectionContainers       *protectioncontainers.ProtectionContainersClient
 	ServiceBus                                 *serviceBus.Client
 	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
 	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
@@ -338,6 +342,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	recoveryServicesBackupProtectedItemsClient := backupprotecteditems.NewBackupProtectedItemsClientWithBaseURI(*resourceManagerEndpoint)
 	recoveryServicesBackupProtectedItemsClient.Client.Authorizer = autoRestAuthorizer
 
+	recoveryServicesBackupProtectionContainersClient := backupprotectioncontainers.NewBackupProtectionContainersClientWithBaseURI(*resourceManagerEndpoint)
+	recoveryServicesBackupProtectionContainersClient.Client.Authorizer = autoRestAuthorizer
+
+	recoveryServicesProtectionContainers := protectioncontainers.NewProtectionContainersClientWithBaseURI(*resourceManagerEndpoint)
+	recoveryServicesProtectionContainers.Client.Authorizer = autoRestAuthorizer
+
 	resourceGraphClient, err := resourceGraph.NewResourcesClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building ResourceGraph client: %+v", err)
@@ -411,6 +421,8 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		ResourceGraphClient:                        resourceGraphClient,
 		ResourcesGroupsClient:                      resourcesClient,
 		RecoveryServicesBackupProtectedItemsClient: &recoveryServicesBackupProtectedItemsClient,
+		RecoveryServicesBackupProtectionContainers: &recoveryServicesBackupProtectionContainersClient,
+		RecoveryServicesProtectionContainers:       &recoveryServicesProtectionContainers,
 		RecoveryServicesProtectedItemClient:        &recoveryServicesProtectedItemClient,
 		RecoveryServicesVaultClient:                recoveryServicesVaultClient,
 		ServiceBus:                                 serviceBusClient,
