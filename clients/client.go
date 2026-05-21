@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	authorization "github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01"
+	compute "github.com/hashicorp/go-azure-sdk/resource-manager/compute/2022-03-03"
 	datafactory "github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01"
 	dataProtection "github.com/hashicorp/go-azure-sdk/resource-manager/dataprotection/2024-04-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2021-11-01/disasterrecoveryconfigs"
@@ -60,6 +61,7 @@ type MicrosoftGraphClient struct {
 
 type ResourceManagerClient struct {
 	AuthorizationClient                        *authorization.Client
+	ComputeClient                              *compute.Client
 	DataFactory                                *datafactory.Client
 	DataProtection                             *dataProtection.Client
 	EventHubDisasterRecoveryClient             *disasterrecoveryconfigs.DisasterRecoveryConfigsClient
@@ -210,6 +212,13 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	})
 	if err != nil {
 		return nil, fmt.Errorf("building Authorization Client: %+v", err)
+	}
+
+	computeClient, err := compute.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
+		c.Authorizer = resourceManagerAuthorizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building Compute Client: %+v", err)
 	}
 
 	dataFactoryClient, err := datafactory.NewClientWithBaseURI(environment.ResourceManager, func(c *resourcemanager.Client) {
@@ -400,6 +409,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 
 	return &ResourceManagerClient{
 		AuthorizationClient:                        authorizationClient,
+		ComputeClient:                              computeClient,
 		DataFactory:                                dataFactoryClient,
 		DataProtection:                             dataProtectionClient,
 		EventHubDisasterRecoveryClient:             eventHubDisasterRecoveryClient,
