@@ -4,7 +4,12 @@ package dataflowdebugsession
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type NetezzaLinkedServiceTypeProperties struct {
-	ConnectionString    *string                       `json:"connectionString,omitempty"`
+	ConnectionString    *interface{}                  `json:"connectionString,omitempty"`
+	Database            *interface{}                  `json:"database,omitempty"`
 	EncryptedCredential *string                       `json:"encryptedCredential,omitempty"`
+	Port                *interface{}                  `json:"port,omitempty"`
 	Pwd                 *AzureKeyVaultSecretReference `json:"pwd,omitempty"`
+	SecurityLevel       *NetezzaSecurityLevelType     `json:"securityLevel,omitempty"`
+	Server              *interface{}                  `json:"server,omitempty"`
+	Uid                 *interface{}                  `json:"uid,omitempty"`
 }

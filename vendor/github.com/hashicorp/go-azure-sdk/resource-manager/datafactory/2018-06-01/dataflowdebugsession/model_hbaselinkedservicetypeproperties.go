@@ -9,33 +9,33 @@ import (
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type HBaseLinkedServiceTypeProperties struct {
-	AllowHostNameCNMismatch   *bool                   `json:"allowHostNameCNMismatch,omitempty"`
-	AllowSelfSignedServerCert *bool                   `json:"allowSelfSignedServerCert,omitempty"`
+	AllowHostNameCNMismatch   *interface{}            `json:"allowHostNameCNMismatch,omitempty"`
+	AllowSelfSignedServerCert *interface{}            `json:"allowSelfSignedServerCert,omitempty"`
 	AuthenticationType        HBaseAuthenticationType `json:"authenticationType"`
-	EnableSsl                 *bool                   `json:"enableSsl,omitempty"`
+	EnableSsl                 *interface{}            `json:"enableSsl,omitempty"`
 	EncryptedCredential       *string                 `json:"encryptedCredential,omitempty"`
-	HTTPPath                  *string                 `json:"httpPath,omitempty"`
-	Host                      string                  `json:"host"`
+	HTTPPath                  *interface{}            `json:"httpPath,omitempty"`
+	Host                      interface{}             `json:"host"`
 	Password                  SecretBase              `json:"password"`
-	Port                      *int64                  `json:"port,omitempty"`
-	TrustedCertPath           *string                 `json:"trustedCertPath,omitempty"`
-	Username                  *string                 `json:"username,omitempty"`
+	Port                      *interface{}            `json:"port,omitempty"`
+	TrustedCertPath           *interface{}            `json:"trustedCertPath,omitempty"`
+	Username                  *interface{}            `json:"username,omitempty"`
 }
 
 var _ json.Unmarshaler = &HBaseLinkedServiceTypeProperties{}
 
 func (s *HBaseLinkedServiceTypeProperties) UnmarshalJSON(bytes []byte) error {
 	var decoded struct {
-		AllowHostNameCNMismatch   *bool                   `json:"allowHostNameCNMismatch,omitempty"`
-		AllowSelfSignedServerCert *bool                   `json:"allowSelfSignedServerCert,omitempty"`
+		AllowHostNameCNMismatch   *interface{}            `json:"allowHostNameCNMismatch,omitempty"`
+		AllowSelfSignedServerCert *interface{}            `json:"allowSelfSignedServerCert,omitempty"`
 		AuthenticationType        HBaseAuthenticationType `json:"authenticationType"`
-		EnableSsl                 *bool                   `json:"enableSsl,omitempty"`
+		EnableSsl                 *interface{}            `json:"enableSsl,omitempty"`
 		EncryptedCredential       *string                 `json:"encryptedCredential,omitempty"`
-		HTTPPath                  *string                 `json:"httpPath,omitempty"`
-		Host                      string                  `json:"host"`
-		Port                      *int64                  `json:"port,omitempty"`
-		TrustedCertPath           *string                 `json:"trustedCertPath,omitempty"`
-		Username                  *string                 `json:"username,omitempty"`
+		HTTPPath                  *interface{}            `json:"httpPath,omitempty"`
+		Host                      interface{}             `json:"host"`
+		Port                      *interface{}            `json:"port,omitempty"`
+		TrustedCertPath           *interface{}            `json:"trustedCertPath,omitempty"`
+		Username                  *interface{}            `json:"username,omitempty"`
 	}
 	if err := json.Unmarshal(bytes, &decoded); err != nil {
 		return fmt.Errorf("unmarshaling: %+v", err)

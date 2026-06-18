@@ -9,29 +9,29 @@ import (
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type HTTPLinkedServiceTypeProperties struct {
-	AuthHeaders                       *map[string]string      `json:"authHeaders,omitempty"`
+	AuthHeaders                       *interface{}            `json:"authHeaders,omitempty"`
 	AuthenticationType                *HTTPAuthenticationType `json:"authenticationType,omitempty"`
-	CertThumbprint                    *string                 `json:"certThumbprint,omitempty"`
-	EmbeddedCertData                  *string                 `json:"embeddedCertData,omitempty"`
-	EnableServerCertificateValidation *bool                   `json:"enableServerCertificateValidation,omitempty"`
+	CertThumbprint                    *interface{}            `json:"certThumbprint,omitempty"`
+	EmbeddedCertData                  *interface{}            `json:"embeddedCertData,omitempty"`
+	EnableServerCertificateValidation *interface{}            `json:"enableServerCertificateValidation,omitempty"`
 	EncryptedCredential               *string                 `json:"encryptedCredential,omitempty"`
 	Password                          SecretBase              `json:"password"`
-	Url                               string                  `json:"url"`
-	UserName                          *string                 `json:"userName,omitempty"`
+	Url                               interface{}             `json:"url"`
+	UserName                          *interface{}            `json:"userName,omitempty"`
 }
 
 var _ json.Unmarshaler = &HTTPLinkedServiceTypeProperties{}
 
 func (s *HTTPLinkedServiceTypeProperties) UnmarshalJSON(bytes []byte) error {
 	var decoded struct {
-		AuthHeaders                       *map[string]string      `json:"authHeaders,omitempty"`
+		AuthHeaders                       *interface{}            `json:"authHeaders,omitempty"`
 		AuthenticationType                *HTTPAuthenticationType `json:"authenticationType,omitempty"`
-		CertThumbprint                    *string                 `json:"certThumbprint,omitempty"`
-		EmbeddedCertData                  *string                 `json:"embeddedCertData,omitempty"`
-		EnableServerCertificateValidation *bool                   `json:"enableServerCertificateValidation,omitempty"`
+		CertThumbprint                    *interface{}            `json:"certThumbprint,omitempty"`
+		EmbeddedCertData                  *interface{}            `json:"embeddedCertData,omitempty"`
+		EnableServerCertificateValidation *interface{}            `json:"enableServerCertificateValidation,omitempty"`
 		EncryptedCredential               *string                 `json:"encryptedCredential,omitempty"`
-		Url                               string                  `json:"url"`
-		UserName                          *string                 `json:"userName,omitempty"`
+		Url                               interface{}             `json:"url"`
+		UserName                          *interface{}            `json:"userName,omitempty"`
 	}
 	if err := json.Unmarshal(bytes, &decoded); err != nil {
 		return fmt.Errorf("unmarshaling: %+v", err)

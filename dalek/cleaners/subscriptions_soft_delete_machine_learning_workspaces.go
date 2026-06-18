@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2024-10-01/workspaces"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2025-09-01/workspaces"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )

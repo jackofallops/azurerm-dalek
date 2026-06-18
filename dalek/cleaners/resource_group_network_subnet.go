@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-05-01/subnets"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-11-01/resourceproviders"
 	baseSdkClient "github.com/hashicorp/go-azure-sdk/sdk/client"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"

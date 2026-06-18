@@ -8,8 +8,8 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	servicebusV20220101Preview "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview/disasterrecoveryconfigs"
+	servicebusV20220101Preview "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2024-01-01"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2024-01-01/disasterrecoveryconfigs"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/pollers"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"

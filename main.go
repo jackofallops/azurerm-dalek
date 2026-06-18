@@ -48,7 +48,7 @@ func run(ctx context.Context, credentials clients.Credentials, opts options.Opti
 		return fmt.Errorf("building Azure Clients: %+v", err)
 	}
 
-	var errs []error
+	errs := make([]error, 0) // nolint prealloc
 
 	log.Printf("[DEBUG] Options: %s", opts)
 

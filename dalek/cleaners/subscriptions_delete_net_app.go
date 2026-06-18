@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/capacitypools"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/netappaccounts"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/volumes"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/volumesreplication"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )

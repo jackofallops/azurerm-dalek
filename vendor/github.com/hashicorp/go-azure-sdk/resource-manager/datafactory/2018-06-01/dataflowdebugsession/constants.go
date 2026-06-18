@@ -9,6 +9,44 @@ import (
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
+type AmazonRdsForOracleAuthenticationType string
+
+const (
+	AmazonRdsForOracleAuthenticationTypeBasic AmazonRdsForOracleAuthenticationType = "Basic"
+)
+
+func PossibleValuesForAmazonRdsForOracleAuthenticationType() []string {
+	return []string{
+		string(AmazonRdsForOracleAuthenticationTypeBasic),
+	}
+}
+
+func (s *AmazonRdsForOracleAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseAmazonRdsForOracleAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseAmazonRdsForOracleAuthenticationType(input string) (*AmazonRdsForOracleAuthenticationType, error) {
+	vals := map[string]AmazonRdsForOracleAuthenticationType{
+		"basic": AmazonRdsForOracleAuthenticationTypeBasic,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := AmazonRdsForOracleAuthenticationType(input)
+	return &out, nil
+}
+
 type AmazonRdsForSqlAuthenticationType string
 
 const (
@@ -686,6 +724,44 @@ func parseGoogleBigQueryV2AuthenticationType(input string) (*GoogleBigQueryV2Aut
 	return &out, nil
 }
 
+type GreenplumAuthenticationType string
+
+const (
+	GreenplumAuthenticationTypeBasic GreenplumAuthenticationType = "Basic"
+)
+
+func PossibleValuesForGreenplumAuthenticationType() []string {
+	return []string{
+		string(GreenplumAuthenticationTypeBasic),
+	}
+}
+
+func (s *GreenplumAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseGreenplumAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseGreenplumAuthenticationType(input string) (*GreenplumAuthenticationType, error) {
+	vals := map[string]GreenplumAuthenticationType{
+		"basic": GreenplumAuthenticationTypeBasic,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := GreenplumAuthenticationType(input)
+	return &out, nil
+}
+
 type HBaseAuthenticationType string
 
 const (
@@ -724,6 +800,94 @@ func parseHBaseAuthenticationType(input string) (*HBaseAuthenticationType, error
 
 	// otherwise presume it's an undefined value and best-effort it
 	out := HBaseAuthenticationType(input)
+	return &out, nil
+}
+
+type HDInsightClusterAuthenticationType string
+
+const (
+	HDInsightClusterAuthenticationTypeBasicAuth                     HDInsightClusterAuthenticationType = "BasicAuth"
+	HDInsightClusterAuthenticationTypeSystemAssignedManagedIdentity HDInsightClusterAuthenticationType = "SystemAssignedManagedIdentity"
+	HDInsightClusterAuthenticationTypeUserAssignedManagedIdentity   HDInsightClusterAuthenticationType = "UserAssignedManagedIdentity"
+)
+
+func PossibleValuesForHDInsightClusterAuthenticationType() []string {
+	return []string{
+		string(HDInsightClusterAuthenticationTypeBasicAuth),
+		string(HDInsightClusterAuthenticationTypeSystemAssignedManagedIdentity),
+		string(HDInsightClusterAuthenticationTypeUserAssignedManagedIdentity),
+	}
+}
+
+func (s *HDInsightClusterAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseHDInsightClusterAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseHDInsightClusterAuthenticationType(input string) (*HDInsightClusterAuthenticationType, error) {
+	vals := map[string]HDInsightClusterAuthenticationType{
+		"basicauth":                     HDInsightClusterAuthenticationTypeBasicAuth,
+		"systemassignedmanagedidentity": HDInsightClusterAuthenticationTypeSystemAssignedManagedIdentity,
+		"userassignedmanagedidentity":   HDInsightClusterAuthenticationTypeUserAssignedManagedIdentity,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := HDInsightClusterAuthenticationType(input)
+	return &out, nil
+}
+
+type HDInsightOndemandClusterResourceGroupAuthenticationType string
+
+const (
+	HDInsightOndemandClusterResourceGroupAuthenticationTypeServicePrincipalKey           HDInsightOndemandClusterResourceGroupAuthenticationType = "ServicePrincipalKey"
+	HDInsightOndemandClusterResourceGroupAuthenticationTypeSystemAssignedManagedIdentity HDInsightOndemandClusterResourceGroupAuthenticationType = "SystemAssignedManagedIdentity"
+	HDInsightOndemandClusterResourceGroupAuthenticationTypeUserAssignedManagedIdentity   HDInsightOndemandClusterResourceGroupAuthenticationType = "UserAssignedManagedIdentity"
+)
+
+func PossibleValuesForHDInsightOndemandClusterResourceGroupAuthenticationType() []string {
+	return []string{
+		string(HDInsightOndemandClusterResourceGroupAuthenticationTypeServicePrincipalKey),
+		string(HDInsightOndemandClusterResourceGroupAuthenticationTypeSystemAssignedManagedIdentity),
+		string(HDInsightOndemandClusterResourceGroupAuthenticationTypeUserAssignedManagedIdentity),
+	}
+}
+
+func (s *HDInsightOndemandClusterResourceGroupAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseHDInsightOndemandClusterResourceGroupAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseHDInsightOndemandClusterResourceGroupAuthenticationType(input string) (*HDInsightOndemandClusterResourceGroupAuthenticationType, error) {
+	vals := map[string]HDInsightOndemandClusterResourceGroupAuthenticationType{
+		"serviceprincipalkey":           HDInsightOndemandClusterResourceGroupAuthenticationTypeServicePrincipalKey,
+		"systemassignedmanagedidentity": HDInsightOndemandClusterResourceGroupAuthenticationTypeSystemAssignedManagedIdentity,
+		"userassignedmanagedidentity":   HDInsightOndemandClusterResourceGroupAuthenticationTypeUserAssignedManagedIdentity,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := HDInsightOndemandClusterResourceGroupAuthenticationType(input)
 	return &out, nil
 }
 
@@ -953,6 +1117,47 @@ func parseImpalaAuthenticationType(input string) (*ImpalaAuthenticationType, err
 
 	// otherwise presume it's an undefined value and best-effort it
 	out := ImpalaAuthenticationType(input)
+	return &out, nil
+}
+
+type ImpalaThriftTransportProtocol string
+
+const (
+	ImpalaThriftTransportProtocolBinary ImpalaThriftTransportProtocol = "Binary"
+	ImpalaThriftTransportProtocolHTTP   ImpalaThriftTransportProtocol = "HTTP"
+)
+
+func PossibleValuesForImpalaThriftTransportProtocol() []string {
+	return []string{
+		string(ImpalaThriftTransportProtocolBinary),
+		string(ImpalaThriftTransportProtocolHTTP),
+	}
+}
+
+func (s *ImpalaThriftTransportProtocol) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseImpalaThriftTransportProtocol(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseImpalaThriftTransportProtocol(input string) (*ImpalaThriftTransportProtocol, error) {
+	vals := map[string]ImpalaThriftTransportProtocol{
+		"binary": ImpalaThriftTransportProtocolBinary,
+		"http":   ImpalaThriftTransportProtocolHTTP,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := ImpalaThriftTransportProtocol(input)
 	return &out, nil
 }
 
@@ -1232,6 +1437,97 @@ func parseIntegrationRuntimeType(input string) (*IntegrationRuntimeType, error) 
 	return &out, nil
 }
 
+type InteractiveCapabilityStatus string
+
+const (
+	InteractiveCapabilityStatusDisabled  InteractiveCapabilityStatus = "Disabled"
+	InteractiveCapabilityStatusDisabling InteractiveCapabilityStatus = "Disabling"
+	InteractiveCapabilityStatusEnabled   InteractiveCapabilityStatus = "Enabled"
+	InteractiveCapabilityStatusEnabling  InteractiveCapabilityStatus = "Enabling"
+)
+
+func PossibleValuesForInteractiveCapabilityStatus() []string {
+	return []string{
+		string(InteractiveCapabilityStatusDisabled),
+		string(InteractiveCapabilityStatusDisabling),
+		string(InteractiveCapabilityStatusEnabled),
+		string(InteractiveCapabilityStatusEnabling),
+	}
+}
+
+func (s *InteractiveCapabilityStatus) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseInteractiveCapabilityStatus(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseInteractiveCapabilityStatus(input string) (*InteractiveCapabilityStatus, error) {
+	vals := map[string]InteractiveCapabilityStatus{
+		"disabled":  InteractiveCapabilityStatusDisabled,
+		"disabling": InteractiveCapabilityStatusDisabling,
+		"enabled":   InteractiveCapabilityStatusEnabled,
+		"enabling":  InteractiveCapabilityStatusEnabling,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := InteractiveCapabilityStatus(input)
+	return &out, nil
+}
+
+type LakehouseAuthenticationType string
+
+const (
+	LakehouseAuthenticationTypeServicePrincipal              LakehouseAuthenticationType = "ServicePrincipal"
+	LakehouseAuthenticationTypeSystemAssignedManagedIdentity LakehouseAuthenticationType = "SystemAssignedManagedIdentity"
+	LakehouseAuthenticationTypeUserAssignedManagedIdentity   LakehouseAuthenticationType = "UserAssignedManagedIdentity"
+)
+
+func PossibleValuesForLakehouseAuthenticationType() []string {
+	return []string{
+		string(LakehouseAuthenticationTypeServicePrincipal),
+		string(LakehouseAuthenticationTypeSystemAssignedManagedIdentity),
+		string(LakehouseAuthenticationTypeUserAssignedManagedIdentity),
+	}
+}
+
+func (s *LakehouseAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseLakehouseAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseLakehouseAuthenticationType(input string) (*LakehouseAuthenticationType, error) {
+	vals := map[string]LakehouseAuthenticationType{
+		"serviceprincipal":              LakehouseAuthenticationTypeServicePrincipal,
+		"systemassignedmanagedidentity": LakehouseAuthenticationTypeSystemAssignedManagedIdentity,
+		"userassignedmanagedidentity":   LakehouseAuthenticationTypeUserAssignedManagedIdentity,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := LakehouseAuthenticationType(input)
+	return &out, nil
+}
+
 type ManagedVirtualNetworkReferenceType string
 
 const (
@@ -1308,6 +1604,47 @@ func parseMongoDbAuthenticationType(input string) (*MongoDbAuthenticationType, e
 
 	// otherwise presume it's an undefined value and best-effort it
 	out := MongoDbAuthenticationType(input)
+	return &out, nil
+}
+
+type NetezzaSecurityLevelType string
+
+const (
+	NetezzaSecurityLevelTypeOnlyUnSecured      NetezzaSecurityLevelType = "OnlyUnSecured"
+	NetezzaSecurityLevelTypePreferredUnSecured NetezzaSecurityLevelType = "PreferredUnSecured"
+)
+
+func PossibleValuesForNetezzaSecurityLevelType() []string {
+	return []string{
+		string(NetezzaSecurityLevelTypeOnlyUnSecured),
+		string(NetezzaSecurityLevelTypePreferredUnSecured),
+	}
+}
+
+func (s *NetezzaSecurityLevelType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseNetezzaSecurityLevelType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseNetezzaSecurityLevelType(input string) (*NetezzaSecurityLevelType, error) {
+	vals := map[string]NetezzaSecurityLevelType{
+		"onlyunsecured":      NetezzaSecurityLevelTypeOnlyUnSecured,
+		"preferredunsecured": NetezzaSecurityLevelTypePreferredUnSecured,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := NetezzaSecurityLevelType(input)
 	return &out, nil
 }
 
@@ -1399,6 +1736,44 @@ func parseODataAuthenticationType(input string) (*ODataAuthenticationType, error
 
 	// otherwise presume it's an undefined value and best-effort it
 	out := ODataAuthenticationType(input)
+	return &out, nil
+}
+
+type OracleAuthenticationType string
+
+const (
+	OracleAuthenticationTypeBasic OracleAuthenticationType = "Basic"
+)
+
+func PossibleValuesForOracleAuthenticationType() []string {
+	return []string{
+		string(OracleAuthenticationTypeBasic),
+	}
+}
+
+func (s *OracleAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseOracleAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseOracleAuthenticationType(input string) (*OracleAuthenticationType, error) {
+	vals := map[string]OracleAuthenticationType{
+		"basic": OracleAuthenticationTypeBasic,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := OracleAuthenticationType(input)
 	return &out, nil
 }
 
@@ -2147,6 +2522,91 @@ func parseTeradataAuthenticationType(input string) (*TeradataAuthenticationType,
 
 	// otherwise presume it's an undefined value and best-effort it
 	out := TeradataAuthenticationType(input)
+	return &out, nil
+}
+
+type ValueType string
+
+const (
+	ValueTypeActual  ValueType = "actual"
+	ValueTypeDisplay ValueType = "display"
+)
+
+func PossibleValuesForValueType() []string {
+	return []string{
+		string(ValueTypeActual),
+		string(ValueTypeDisplay),
+	}
+}
+
+func (s *ValueType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseValueType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseValueType(input string) (*ValueType, error) {
+	vals := map[string]ValueType{
+		"actual":  ValueTypeActual,
+		"display": ValueTypeDisplay,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := ValueType(input)
+	return &out, nil
+}
+
+type WarehouseAuthenticationType string
+
+const (
+	WarehouseAuthenticationTypeServicePrincipal              WarehouseAuthenticationType = "ServicePrincipal"
+	WarehouseAuthenticationTypeSystemAssignedManagedIdentity WarehouseAuthenticationType = "SystemAssignedManagedIdentity"
+	WarehouseAuthenticationTypeUserAssignedManagedIdentity   WarehouseAuthenticationType = "UserAssignedManagedIdentity"
+)
+
+func PossibleValuesForWarehouseAuthenticationType() []string {
+	return []string{
+		string(WarehouseAuthenticationTypeServicePrincipal),
+		string(WarehouseAuthenticationTypeSystemAssignedManagedIdentity),
+		string(WarehouseAuthenticationTypeUserAssignedManagedIdentity),
+	}
+}
+
+func (s *WarehouseAuthenticationType) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseWarehouseAuthenticationType(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseWarehouseAuthenticationType(input string) (*WarehouseAuthenticationType, error) {
+	vals := map[string]WarehouseAuthenticationType{
+		"serviceprincipal":              WarehouseAuthenticationTypeServicePrincipal,
+		"systemassignedmanagedidentity": WarehouseAuthenticationTypeSystemAssignedManagedIdentity,
+		"userassignedmanagedidentity":   WarehouseAuthenticationTypeUserAssignedManagedIdentity,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := WarehouseAuthenticationType(input)
 	return &out, nil
 }
 

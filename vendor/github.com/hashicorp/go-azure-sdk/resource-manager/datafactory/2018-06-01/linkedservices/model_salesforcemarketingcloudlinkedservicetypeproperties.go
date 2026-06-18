@@ -9,25 +9,25 @@ import (
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type SalesforceMarketingCloudLinkedServiceTypeProperties struct {
-	ClientId              *string      `json:"clientId,omitempty"`
+	ClientId              *interface{} `json:"clientId,omitempty"`
 	ClientSecret          SecretBase   `json:"clientSecret"`
 	ConnectionProperties  *interface{} `json:"connectionProperties,omitempty"`
 	EncryptedCredential   *string      `json:"encryptedCredential,omitempty"`
-	UseEncryptedEndpoints *bool        `json:"useEncryptedEndpoints,omitempty"`
-	UseHostVerification   *bool        `json:"useHostVerification,omitempty"`
-	UsePeerVerification   *bool        `json:"usePeerVerification,omitempty"`
+	UseEncryptedEndpoints *interface{} `json:"useEncryptedEndpoints,omitempty"`
+	UseHostVerification   *interface{} `json:"useHostVerification,omitempty"`
+	UsePeerVerification   *interface{} `json:"usePeerVerification,omitempty"`
 }
 
 var _ json.Unmarshaler = &SalesforceMarketingCloudLinkedServiceTypeProperties{}
 
 func (s *SalesforceMarketingCloudLinkedServiceTypeProperties) UnmarshalJSON(bytes []byte) error {
 	var decoded struct {
-		ClientId              *string      `json:"clientId,omitempty"`
+		ClientId              *interface{} `json:"clientId,omitempty"`
 		ConnectionProperties  *interface{} `json:"connectionProperties,omitempty"`
 		EncryptedCredential   *string      `json:"encryptedCredential,omitempty"`
-		UseEncryptedEndpoints *bool        `json:"useEncryptedEndpoints,omitempty"`
-		UseHostVerification   *bool        `json:"useHostVerification,omitempty"`
-		UsePeerVerification   *bool        `json:"usePeerVerification,omitempty"`
+		UseEncryptedEndpoints *interface{} `json:"useEncryptedEndpoints,omitempty"`
+		UseHostVerification   *interface{} `json:"useHostVerification,omitempty"`
+		UsePeerVerification   *interface{} `json:"usePeerVerification,omitempty"`
 	}
 	if err := json.Unmarshal(bytes, &decoded); err != nil {
 		return fmt.Errorf("unmarshaling: %+v", err)
