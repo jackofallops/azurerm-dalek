@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2024-04-01/resources"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
 	"github.com/jackofallops/azurerm-dalek/clients"
@@ -108,7 +108,7 @@ func (d deleteResourceGroupsInSubscriptionCleaner) Cleanup(ctx context.Context, 
 }
 
 func (d deleteResourceGroupsInSubscriptionCleaner) resourceGroupContainsResourceTypes(ctx context.Context, client *clients.AzureClient, id commonids.ResourceGroupId, resourceTypes []string) (*bool, error) {
-	items := make([]string, 0)
+	items := make([]string, 0, len(resourceTypes))
 	for _, resourceType := range resourceTypes {
 		items = append(items, fmt.Sprintf("'%s'", resourceType))
 	}

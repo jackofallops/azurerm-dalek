@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/management/2023-04-01/managementgroups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/management/2023-04-01/managements"
 	"github.com/hashicorp/go-uuid"
 )
 
@@ -20,7 +21,9 @@ func (d *Dalek) ManagementGroups(ctx context.Context) error {
 
 func (d *Dalek) deleteManagementGroups(ctx context.Context) error {
 	client := d.client.ResourceManager.ManagementClient
-	groups, err := client.List(ctx, managementgroups.DefaultListOperationOptions())
+	listClient := d.client.ResourceManager.ManagementGroupsListClient
+
+	groups, err := listClient.ManagementGroupsList(ctx, managements.DefaultManagementGroupsListOperationOptions())
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error obtaining Management Groups List: %+v", err)
 	}

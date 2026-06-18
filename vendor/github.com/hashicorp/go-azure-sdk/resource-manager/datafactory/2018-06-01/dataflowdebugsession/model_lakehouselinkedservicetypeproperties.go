@@ -9,32 +9,38 @@ import (
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type LakeHouseLinkedServiceTypeProperties struct {
-	ArtifactId                     *string    `json:"artifactId,omitempty"`
-	EncryptedCredential            *string    `json:"encryptedCredential,omitempty"`
-	ServicePrincipalCredential     SecretBase `json:"servicePrincipalCredential"`
-	ServicePrincipalCredentialType *string    `json:"servicePrincipalCredentialType,omitempty"`
-	ServicePrincipalId             *string    `json:"servicePrincipalId,omitempty"`
-	ServicePrincipalKey            SecretBase `json:"servicePrincipalKey"`
-	Tenant                         *string    `json:"tenant,omitempty"`
-	WorkspaceId                    *string    `json:"workspaceId,omitempty"`
+	ArtifactId                     *interface{}                 `json:"artifactId,omitempty"`
+	AuthenticationType             *LakehouseAuthenticationType `json:"authenticationType,omitempty"`
+	Credential                     *CredentialReference         `json:"credential,omitempty"`
+	EncryptedCredential            *string                      `json:"encryptedCredential,omitempty"`
+	ServicePrincipalCredential     SecretBase                   `json:"servicePrincipalCredential"`
+	ServicePrincipalCredentialType *interface{}                 `json:"servicePrincipalCredentialType,omitempty"`
+	ServicePrincipalId             *interface{}                 `json:"servicePrincipalId,omitempty"`
+	ServicePrincipalKey            SecretBase                   `json:"servicePrincipalKey"`
+	Tenant                         *interface{}                 `json:"tenant,omitempty"`
+	WorkspaceId                    *interface{}                 `json:"workspaceId,omitempty"`
 }
 
 var _ json.Unmarshaler = &LakeHouseLinkedServiceTypeProperties{}
 
 func (s *LakeHouseLinkedServiceTypeProperties) UnmarshalJSON(bytes []byte) error {
 	var decoded struct {
-		ArtifactId                     *string `json:"artifactId,omitempty"`
-		EncryptedCredential            *string `json:"encryptedCredential,omitempty"`
-		ServicePrincipalCredentialType *string `json:"servicePrincipalCredentialType,omitempty"`
-		ServicePrincipalId             *string `json:"servicePrincipalId,omitempty"`
-		Tenant                         *string `json:"tenant,omitempty"`
-		WorkspaceId                    *string `json:"workspaceId,omitempty"`
+		ArtifactId                     *interface{}                 `json:"artifactId,omitempty"`
+		AuthenticationType             *LakehouseAuthenticationType `json:"authenticationType,omitempty"`
+		Credential                     *CredentialReference         `json:"credential,omitempty"`
+		EncryptedCredential            *string                      `json:"encryptedCredential,omitempty"`
+		ServicePrincipalCredentialType *interface{}                 `json:"servicePrincipalCredentialType,omitempty"`
+		ServicePrincipalId             *interface{}                 `json:"servicePrincipalId,omitempty"`
+		Tenant                         *interface{}                 `json:"tenant,omitempty"`
+		WorkspaceId                    *interface{}                 `json:"workspaceId,omitempty"`
 	}
 	if err := json.Unmarshal(bytes, &decoded); err != nil {
 		return fmt.Errorf("unmarshaling: %+v", err)
 	}
 
 	s.ArtifactId = decoded.ArtifactId
+	s.AuthenticationType = decoded.AuthenticationType
+	s.Credential = decoded.Credential
 	s.EncryptedCredential = decoded.EncryptedCredential
 	s.ServicePrincipalCredentialType = decoded.ServicePrincipalCredentialType
 	s.ServicePrincipalId = decoded.ServicePrincipalId

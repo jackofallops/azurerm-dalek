@@ -9,34 +9,34 @@ import (
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type GoogleBigQueryLinkedServiceTypeProperties struct {
-	AdditionalProjects      *string                          `json:"additionalProjects,omitempty"`
+	AdditionalProjects      *interface{}                     `json:"additionalProjects,omitempty"`
 	AuthenticationType      GoogleBigQueryAuthenticationType `json:"authenticationType"`
-	ClientId                *string                          `json:"clientId,omitempty"`
+	ClientId                *interface{}                     `json:"clientId,omitempty"`
 	ClientSecret            SecretBase                       `json:"clientSecret"`
-	Email                   *string                          `json:"email,omitempty"`
+	Email                   *interface{}                     `json:"email,omitempty"`
 	EncryptedCredential     *string                          `json:"encryptedCredential,omitempty"`
-	KeyFilePath             *string                          `json:"keyFilePath,omitempty"`
-	Project                 string                           `json:"project"`
+	KeyFilePath             *interface{}                     `json:"keyFilePath,omitempty"`
+	Project                 interface{}                      `json:"project"`
 	RefreshToken            SecretBase                       `json:"refreshToken"`
-	RequestGoogleDriveScope *bool                            `json:"requestGoogleDriveScope,omitempty"`
-	TrustedCertPath         *string                          `json:"trustedCertPath,omitempty"`
-	UseSystemTrustStore     *bool                            `json:"useSystemTrustStore,omitempty"`
+	RequestGoogleDriveScope *interface{}                     `json:"requestGoogleDriveScope,omitempty"`
+	TrustedCertPath         *interface{}                     `json:"trustedCertPath,omitempty"`
+	UseSystemTrustStore     *interface{}                     `json:"useSystemTrustStore,omitempty"`
 }
 
 var _ json.Unmarshaler = &GoogleBigQueryLinkedServiceTypeProperties{}
 
 func (s *GoogleBigQueryLinkedServiceTypeProperties) UnmarshalJSON(bytes []byte) error {
 	var decoded struct {
-		AdditionalProjects      *string                          `json:"additionalProjects,omitempty"`
+		AdditionalProjects      *interface{}                     `json:"additionalProjects,omitempty"`
 		AuthenticationType      GoogleBigQueryAuthenticationType `json:"authenticationType"`
-		ClientId                *string                          `json:"clientId,omitempty"`
-		Email                   *string                          `json:"email,omitempty"`
+		ClientId                *interface{}                     `json:"clientId,omitempty"`
+		Email                   *interface{}                     `json:"email,omitempty"`
 		EncryptedCredential     *string                          `json:"encryptedCredential,omitempty"`
-		KeyFilePath             *string                          `json:"keyFilePath,omitempty"`
-		Project                 string                           `json:"project"`
-		RequestGoogleDriveScope *bool                            `json:"requestGoogleDriveScope,omitempty"`
-		TrustedCertPath         *string                          `json:"trustedCertPath,omitempty"`
-		UseSystemTrustStore     *bool                            `json:"useSystemTrustStore,omitempty"`
+		KeyFilePath             *interface{}                     `json:"keyFilePath,omitempty"`
+		Project                 interface{}                      `json:"project"`
+		RequestGoogleDriveScope *interface{}                     `json:"requestGoogleDriveScope,omitempty"`
+		TrustedCertPath         *interface{}                     `json:"trustedCertPath,omitempty"`
+		UseSystemTrustStore     *interface{}                     `json:"useSystemTrustStore,omitempty"`
 	}
 	if err := json.Unmarshal(bytes, &decoded); err != nil {
 		return fmt.Errorf("unmarshaling: %+v", err)

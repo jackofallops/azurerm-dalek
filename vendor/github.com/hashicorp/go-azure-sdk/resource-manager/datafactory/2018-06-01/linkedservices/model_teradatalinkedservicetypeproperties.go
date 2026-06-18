@@ -10,11 +10,17 @@ import (
 
 type TeradataLinkedServiceTypeProperties struct {
 	AuthenticationType  *TeradataAuthenticationType `json:"authenticationType,omitempty"`
-	ConnectionString    *string                     `json:"connectionString,omitempty"`
+	CharacterSet        *interface{}                `json:"characterSet,omitempty"`
+	ConnectionString    *interface{}                `json:"connectionString,omitempty"`
 	EncryptedCredential *string                     `json:"encryptedCredential,omitempty"`
+	HTTPSPortNumber     *interface{}                `json:"httpsPortNumber,omitempty"`
+	MaxRespSize         *interface{}                `json:"maxRespSize,omitempty"`
 	Password            SecretBase                  `json:"password"`
-	Server              *string                     `json:"server,omitempty"`
-	Username            *string                     `json:"username,omitempty"`
+	PortNumber          *interface{}                `json:"portNumber,omitempty"`
+	Server              *interface{}                `json:"server,omitempty"`
+	SslMode             *interface{}                `json:"sslMode,omitempty"`
+	UseDataEncryption   *interface{}                `json:"useDataEncryption,omitempty"`
+	Username            *interface{}                `json:"username,omitempty"`
 }
 
 var _ json.Unmarshaler = &TeradataLinkedServiceTypeProperties{}
@@ -22,19 +28,31 @@ var _ json.Unmarshaler = &TeradataLinkedServiceTypeProperties{}
 func (s *TeradataLinkedServiceTypeProperties) UnmarshalJSON(bytes []byte) error {
 	var decoded struct {
 		AuthenticationType  *TeradataAuthenticationType `json:"authenticationType,omitempty"`
-		ConnectionString    *string                     `json:"connectionString,omitempty"`
+		CharacterSet        *interface{}                `json:"characterSet,omitempty"`
+		ConnectionString    *interface{}                `json:"connectionString,omitempty"`
 		EncryptedCredential *string                     `json:"encryptedCredential,omitempty"`
-		Server              *string                     `json:"server,omitempty"`
-		Username            *string                     `json:"username,omitempty"`
+		HTTPSPortNumber     *interface{}                `json:"httpsPortNumber,omitempty"`
+		MaxRespSize         *interface{}                `json:"maxRespSize,omitempty"`
+		PortNumber          *interface{}                `json:"portNumber,omitempty"`
+		Server              *interface{}                `json:"server,omitempty"`
+		SslMode             *interface{}                `json:"sslMode,omitempty"`
+		UseDataEncryption   *interface{}                `json:"useDataEncryption,omitempty"`
+		Username            *interface{}                `json:"username,omitempty"`
 	}
 	if err := json.Unmarshal(bytes, &decoded); err != nil {
 		return fmt.Errorf("unmarshaling: %+v", err)
 	}
 
 	s.AuthenticationType = decoded.AuthenticationType
+	s.CharacterSet = decoded.CharacterSet
 	s.ConnectionString = decoded.ConnectionString
 	s.EncryptedCredential = decoded.EncryptedCredential
+	s.HTTPSPortNumber = decoded.HTTPSPortNumber
+	s.MaxRespSize = decoded.MaxRespSize
+	s.PortNumber = decoded.PortNumber
 	s.Server = decoded.Server
+	s.SslMode = decoded.SslMode
+	s.UseDataEncryption = decoded.UseDataEncryption
 	s.Username = decoded.Username
 
 	var temp map[string]json.RawMessage

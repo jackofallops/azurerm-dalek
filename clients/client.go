@@ -13,31 +13,32 @@ import (
 	eventhubNamespace "github.com/hashicorp/go-azure-sdk/resource-manager/eventhub/2022-01-01-preview/namespaces"
 	graphservices "github.com/hashicorp/go-azure-sdk/resource-manager/graphservices/2023-04-13"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/keyvault/2023-07-01/managedhsms"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2024-10-01/workspaces"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/managementgroups/2021-04-01/managementgroups"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/capacitypools"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/netappaccounts"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumes"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2023-05-01/volumesreplication"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/machinelearningservices/2025-09-01/workspaces"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/management/2023-04-01/managementgroups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/management/2023-04-01/managements"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/capacitypools"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/netappaccounts"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/volumes"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/volumesreplication"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-05-01/subnets"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-05-01/virtualnetworks"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2022-07-01/monitors"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2024-10-01/monitors"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/notificationhubs/2023-09-01/namespaces"
 	paloAltoNetworks "github.com/hashicorp/go-azure-sdk/resource-manager/paloaltonetworks/2022-08-29"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2024-10-01/vaults"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservices/2025-08-01/vaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotecteditems"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotectioncontainers"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protectioncontainers"
-	resourceGraph "github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2022-10-01/resources"
+	resourceGraph "github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2024-04-01/resources"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
-	serviceBus "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2022-01-01-preview"
+	serviceBus "github.com/hashicorp/go-azure-sdk/resource-manager/servicebus/2024-01-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloudendpointresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/registeredserverresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
-	webResourceProviders "github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-04-01/resourceproviders"
+	webResourceProviders "github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-11-01/resourceproviders"
 	workloads "github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01"
 	"github.com/hashicorp/go-azure-sdk/sdk/auth"
 	authWrapper "github.com/hashicorp/go-azure-sdk/sdk/auth/autorest"
@@ -71,6 +72,7 @@ type ResourceManagerClient struct {
 	MachineLearningWorkspacesClient            *workspaces.WorkspacesClient
 	ManagedHSMsClient                          *managedhsms.ManagedHsmsClient
 	ManagementClient                           *managementgroups.ManagementGroupsClient
+	ManagementGroupsListClient                 *managements.ManagementsClient
 	NetAppAccountClient                        *netappaccounts.NetAppAccountsClient
 	NetAppCapacityPoolClient                   *capacitypools.CapacityPoolsClient
 	NetAppVolumeClient                         *volumes.VolumesClient
@@ -278,6 +280,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	}
 	managementClient.Client.Authorizer = resourceManagerAuthorizer
 
+	managementGroupsListClient, err := managements.NewManagementsClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building Managements client: %+v", err)
+	}
+	managementGroupsListClient.Client.Authorizer = resourceManagerAuthorizer
+
 	managedHsmsClient, err := managedhsms.NewManagedHsmsClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building Managed HSM Client: %+v", err)
@@ -419,6 +427,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		MachineLearningWorkspacesClient:            workspacesClient,
 		ManagedHSMsClient:                          managedHsmsClient,
 		ManagementClient:                           managementClient,
+		ManagementGroupsListClient:                 managementGroupsListClient,
 		NetAppAccountClient:                        netAppAccountClient,
 		NetAppCapacityPoolClient:                   netAppCapacityPoolClient,
 		NetAppVolumeClient:                         netAppVolumeClient,

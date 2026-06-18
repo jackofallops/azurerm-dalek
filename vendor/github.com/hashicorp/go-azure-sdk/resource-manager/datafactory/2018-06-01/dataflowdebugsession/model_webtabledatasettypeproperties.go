@@ -4,6 +4,6 @@ package dataflowdebugsession
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
 type WebTableDatasetTypeProperties struct {
-	Index int64   `json:"index"`
-	Path  *string `json:"path,omitempty"`
+	Index interface{}  `json:"index"`
+	Path  *interface{} `json:"path,omitempty"`
 }
