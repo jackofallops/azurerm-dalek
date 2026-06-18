@@ -26,7 +26,7 @@ jobs:
           go-version-file: ./.go-version
       - uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9
         with:
-          version: 'v2.4.0'
+          version: 'v2.12.0'
   save-artifacts-on-fail:
     needs: golint
     if: ${{ failure() }}
