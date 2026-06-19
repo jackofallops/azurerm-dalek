@@ -53,14 +53,14 @@ func run(ctx context.Context, credentials clients.Credentials, opts options.Opti
 	log.Printf("[DEBUG] Options: %s", opts)
 
 	client := dalek.NewDalek(sdkClient, opts)
-	//log.Printf("[DEBUG] Processing Resource Manager..")
-	//errs = append(errs, client.ResourceManager(ctx)...)
+	log.Printf("[DEBUG] Processing Resource Manager..")
+	errs = append(errs, client.ResourceManager(ctx)...)
 
 	log.Printf("[DEBUG] Processing Microsoft Graph..")
 	errs = append(errs, client.MicrosoftGraph(ctx))
 
-	//log.Printf("[DEBUG] Processing Management Groups..")
-	//errs = append(errs, client.ManagementGroups(ctx))
+	log.Printf("[DEBUG] Processing Management Groups..")
+	errs = append(errs, client.ManagementGroups(ctx))
 
 	return errors.Join(errs...)
 }
