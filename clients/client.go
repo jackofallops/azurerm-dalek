@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/applications/stable/application"
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/deleteditem"
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/groups/stable/group"
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/serviceprincipals/stable/serviceprincipal"
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/users/stable/user"
 	authorization "github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01"
 	compute "github.com/hashicorp/go-azure-sdk/resource-manager/compute/2022-03-03"
 	datafactory "github.com/hashicorp/go-azure-sdk/resource-manager/datafactory/2018-06-01"
@@ -44,7 +49,6 @@ import (
 	authWrapper "github.com/hashicorp/go-azure-sdk/sdk/auth/autorest"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
 	"github.com/hashicorp/go-azure-sdk/sdk/environments"
-	"github.com/manicminer/hamilton/msgraph"
 )
 
 type AzureClient struct {
@@ -54,10 +58,11 @@ type AzureClient struct {
 }
 
 type MicrosoftGraphClient struct {
-	Applications      *msgraph.ApplicationsClient
-	Groups            *msgraph.GroupsClient
-	ServicePrincipals *msgraph.ServicePrincipalsClient
-	Users             *msgraph.UsersClient
+	Applications      *application.ApplicationClient
+	DeletedItems      *deleteditem.DeletedItemClient
+	Groups            *group.GroupClient
+	ServicePrincipals *serviceprincipal.ServicePrincipalClient
+	Users             *user.UserClient
 }
 
 type ResourceManagerClient struct {
@@ -165,29 +170,40 @@ func buildMicrosoftGraphClient(ctx context.Context, creds auth.Credentials, envi
 	if err != nil {
 		return nil, fmt.Errorf("building Microsoft Graph authorizer: %+v", err)
 	}
-	microsoftGraphEndpoint, ok := environment.MicrosoftGraph.Endpoint()
-	if !ok {
-		return nil, fmt.Errorf("environment %q was missing a Microsoft Graph endpoint", environment.Name)
+
+	applicationsClient, err := application.NewApplicationClientWithBaseURI(environment.MicrosoftGraph)
+	if err != nil {
+		return nil, fmt.Errorf("building Application client: %+v", err)
 	}
+	applicationsClient.Client.Authorizer = microsoftGraphAuthorizer
 
-	applicationsClient := msgraph.NewApplicationsClient()
-	applicationsClient.BaseClient.Authorizer = microsoftGraphAuthorizer
-	applicationsClient.BaseClient.Endpoint = *microsoftGraphEndpoint
+	deletedItemsClient, err := deleteditem.NewDeletedItemClientWithBaseURI(environment.MicrosoftGraph)
+	if err != nil {
+		return nil, fmt.Errorf("building Deleted Item client: %+v", err)
+	}
+	deletedItemsClient.Client.Authorizer = microsoftGraphAuthorizer
 
-	groupsClient := msgraph.NewGroupsClient()
-	groupsClient.BaseClient.Authorizer = microsoftGraphAuthorizer
-	groupsClient.BaseClient.Endpoint = *microsoftGraphEndpoint
+	groupsClient, err := group.NewGroupClientWithBaseURI(environment.MicrosoftGraph)
+	if err != nil {
+		return nil, fmt.Errorf("building Group client: %+v", err)
+	}
+	groupsClient.Client.Authorizer = microsoftGraphAuthorizer
 
-	servicePrincipalsClient := msgraph.NewServicePrincipalsClient()
-	servicePrincipalsClient.BaseClient.Authorizer = microsoftGraphAuthorizer
-	servicePrincipalsClient.BaseClient.Endpoint = *microsoftGraphEndpoint
+	servicePrincipalsClient, err := serviceprincipal.NewServicePrincipalClientWithBaseURI(environment.MicrosoftGraph)
+	if err != nil {
+		return nil, fmt.Errorf("building Service Principal client: %+v", err)
+	}
+	servicePrincipalsClient.Client.Authorizer = microsoftGraphAuthorizer
 
-	usersClient := msgraph.NewUsersClient()
-	usersClient.BaseClient.Authorizer = microsoftGraphAuthorizer
-	usersClient.BaseClient.Endpoint = *microsoftGraphEndpoint
+	usersClient, err := user.NewUserClientWithBaseURI(environment.MicrosoftGraph)
+	if err != nil {
+		return nil, fmt.Errorf("building User client: %+v", err)
+	}
+	usersClient.Client.Authorizer = microsoftGraphAuthorizer
 
 	return &MicrosoftGraphClient{
 		Applications:      applicationsClient,
+		DeletedItems:      deletedItemsClient,
 		Groups:            groupsClient,
 		ServicePrincipals: servicePrincipalsClient,
 		Users:             usersClient,

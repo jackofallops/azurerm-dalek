@@ -4,10 +4,10 @@ go 1.26.4
 
 require (
 	github.com/hashicorp/go-azure-helpers v0.80.0
-	github.com/hashicorp/go-azure-sdk/resource-manager v0.20260616.1142719
-	github.com/hashicorp/go-azure-sdk/sdk v0.20260616.1142719
+	github.com/hashicorp/go-azure-sdk/microsoft-graph v0.20260619.1225202
+	github.com/hashicorp/go-azure-sdk/resource-manager v0.20260619.1225202
+	github.com/hashicorp/go-azure-sdk/sdk v0.20260619.1225202
 	github.com/hashicorp/go-uuid v1.0.3
-	github.com/manicminer/hamilton v0.72.0
 )
 
 require (

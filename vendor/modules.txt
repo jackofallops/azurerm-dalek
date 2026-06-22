@@ -54,7 +54,15 @@ github.com/hashicorp/go-azure-helpers/resourcemanager/recaser
 github.com/hashicorp/go-azure-helpers/resourcemanager/resourceids
 github.com/hashicorp/go-azure-helpers/resourcemanager/systemdata
 github.com/hashicorp/go-azure-helpers/resourcemanager/zones
-# github.com/hashicorp/go-azure-sdk/resource-manager v0.20260616.1142719
+# github.com/hashicorp/go-azure-sdk/microsoft-graph v0.20260619.1225202
+## explicit; go 1.26.3
+github.com/hashicorp/go-azure-sdk/microsoft-graph/applications/stable/application
+github.com/hashicorp/go-azure-sdk/microsoft-graph/common-types/stable
+github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/deleteditem
+github.com/hashicorp/go-azure-sdk/microsoft-graph/groups/stable/group
+github.com/hashicorp/go-azure-sdk/microsoft-graph/serviceprincipals/stable/serviceprincipal
+github.com/hashicorp/go-azure-sdk/microsoft-graph/users/stable/user
+# github.com/hashicorp/go-azure-sdk/resource-manager v0.20260619.1225202
 ## explicit; go 1.26.3
 github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01
 github.com/hashicorp/go-azure-sdk/resource-manager/authorization/2022-04-01/denyassignments
@@ -176,12 +184,13 @@ github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapappli
 github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapcentralserverinstances
 github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapdatabaseinstances
 github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapvirtualinstances
-# github.com/hashicorp/go-azure-sdk/sdk v0.20260616.1142719
+# github.com/hashicorp/go-azure-sdk/sdk v0.20260619.1225202
 ## explicit; go 1.26.3
 github.com/hashicorp/go-azure-sdk/sdk/auth
 github.com/hashicorp/go-azure-sdk/sdk/auth/autorest
 github.com/hashicorp/go-azure-sdk/sdk/claims
 github.com/hashicorp/go-azure-sdk/sdk/client
+github.com/hashicorp/go-azure-sdk/sdk/client/msgraph
 github.com/hashicorp/go-azure-sdk/sdk/client/pollers
 github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager
 github.com/hashicorp/go-azure-sdk/sdk/environments
@@ -189,6 +198,7 @@ github.com/hashicorp/go-azure-sdk/sdk/internal/accept
 github.com/hashicorp/go-azure-sdk/sdk/internal/azurecli
 github.com/hashicorp/go-azure-sdk/sdk/internal/metadata
 github.com/hashicorp/go-azure-sdk/sdk/internal/stringfmt
+github.com/hashicorp/go-azure-sdk/sdk/nullable
 github.com/hashicorp/go-azure-sdk/sdk/odata
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
@@ -249,11 +259,6 @@ github.com/hashicorp/terraform-plugin-sdk/v2/internal/plugin/convert
 github.com/hashicorp/terraform-plugin-sdk/v2/internal/tfdiags
 github.com/hashicorp/terraform-plugin-sdk/v2/meta
 github.com/hashicorp/terraform-plugin-sdk/v2/terraform
-# github.com/manicminer/hamilton v0.72.0
-## explicit; go 1.21
-github.com/manicminer/hamilton/errors
-github.com/manicminer/hamilton/internal/utils
-github.com/manicminer/hamilton/msgraph
 # github.com/mattn/go-colorable v0.1.14
 ## explicit; go 1.18
 github.com/mattn/go-colorable
