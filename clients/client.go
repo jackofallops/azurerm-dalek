@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/applications/stable/application"
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/administrativeunit"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/deleteditem"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/groups/stable/group"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/serviceprincipals/stable/serviceprincipal"
@@ -58,11 +59,12 @@ type AzureClient struct {
 }
 
 type MicrosoftGraphClient struct {
-	Applications      *application.ApplicationClient
-	DeletedItems      *deleteditem.DeletedItemClient
-	Groups            *group.GroupClient
-	ServicePrincipals *serviceprincipal.ServicePrincipalClient
-	Users             *user.UserClient
+	AdministrativeUnits *administrativeunit.AdministrativeUnitClient
+	Applications        *application.ApplicationClient
+	DeletedItems        *deleteditem.DeletedItemClient
+	Groups              *group.GroupClient
+	ServicePrincipals   *serviceprincipal.ServicePrincipalClient
+	Users               *user.UserClient
 }
 
 type ResourceManagerClient struct {
@@ -177,6 +179,12 @@ func buildMicrosoftGraphClient(ctx context.Context, creds auth.Credentials, envi
 	}
 	applicationsClient.Client.Authorizer = microsoftGraphAuthorizer
 
+	administrativeUnitsClient, err := administrativeunit.NewAdministrativeUnitClientWithBaseURI(environment.MicrosoftGraph)
+	if err != nil {
+		return nil, fmt.Errorf("building Administrative Unit client: %+v", err)
+	}
+	administrativeUnitsClient.Client.Authorizer = microsoftGraphAuthorizer
+
 	deletedItemsClient, err := deleteditem.NewDeletedItemClientWithBaseURI(environment.MicrosoftGraph)
 	if err != nil {
 		return nil, fmt.Errorf("building Deleted Item client: %+v", err)
@@ -202,11 +210,12 @@ func buildMicrosoftGraphClient(ctx context.Context, creds auth.Credentials, envi
 	usersClient.Client.Authorizer = microsoftGraphAuthorizer
 
 	return &MicrosoftGraphClient{
-		Applications:      applicationsClient,
-		DeletedItems:      deletedItemsClient,
-		Groups:            groupsClient,
-		ServicePrincipals: servicePrincipalsClient,
-		Users:             usersClient,
+		AdministrativeUnits: administrativeUnitsClient,
+		Applications:        applicationsClient,
+		DeletedItems:        deletedItemsClient,
+		Groups:              groupsClient,
+		ServicePrincipals:   servicePrincipalsClient,
+		Users:               usersClient,
 	}, nil
 }
 

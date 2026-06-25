@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/applications/stable/application"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/common-types/stable"
+	"github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/administrativeunit"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/deleteditem"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/groups/stable/group"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/serviceprincipals/stable/serviceprincipal"
@@ -17,24 +18,29 @@ import (
 )
 
 func (d *Dalek) MicrosoftGraph(ctx context.Context) error {
-	log.Printf("[DEBUG] Preparing to delete Service Principals")
-	if err := d.deleteMicrosoftGraphServicePrincipals(ctx); err != nil {
-		return fmt.Errorf("deleting Service Principals: %+v", err)
-	}
+	//log.Printf("[DEBUG] Preparing to delete Service Principals")
+	//if err := d.deleteMicrosoftGraphServicePrincipals(ctx); err != nil {
+	//	return fmt.Errorf("deleting Service Principals: %+v", err)
+	//}
+	//
+	//log.Printf("[DEBUG] Preparing to delete Applications")
+	//if err := d.deleteMicrosoftGraphApplications(ctx); err != nil {
+	//	return fmt.Errorf("deleting Applications: %+v", err)
+	//}
+	//
+	//log.Printf("[DEBUG] Preparing to delete Groups")
+	//if err := d.deleteMicrosoftGraphGroups(ctx); err != nil {
+	//	return fmt.Errorf("deleting Groups: %+v", err)
+	//}
+	//
+	//log.Printf("[DEBUG] Preparing to delete Users")
+	//if err := d.deleteMicrosoftGraphUsers(ctx); err != nil {
+	//	return fmt.Errorf("deleting Users: %+v", err)
+	//}
 
-	log.Printf("[DEBUG] Preparing to delete Applications")
-	if err := d.deleteMicrosoftGraphApplications(ctx); err != nil {
-		return fmt.Errorf("deleting Applications: %+v", err)
-	}
-
-	log.Printf("[DEBUG] Preparing to delete Groups")
-	if err := d.deleteMicrosoftGraphGroups(ctx); err != nil {
-		return fmt.Errorf("deleting Groups: %+v", err)
-	}
-
-	log.Printf("[DEBUG] Preparing to delete Users")
-	if err := d.deleteMicrosoftGraphUsers(ctx); err != nil {
-		return fmt.Errorf("deleting Users: %+v", err)
+	log.Printf("[DEBUG] Preparing to delete Administrative Units")
+	if err := d.deleteMicrosoftGraphAdministrativeUnits(ctx); err != nil {
+		return fmt.Errorf("deleting Administrative Units: %+v", err)
 	}
 
 	return nil
@@ -364,6 +370,86 @@ func (d *Dalek) deleteMicrosoftGraphUsers(ctx context.Context) error {
 			continue
 		}
 		log.Printf("[DEBUG] Purged Microsoft Graph User %q (ObjID: %s)", displayName, id)
+	}
+
+	return nil
+}
+
+func (d *Dalek) deleteMicrosoftGraphAdministrativeUnits(ctx context.Context) error {
+	if len(d.opts.Prefix) == 0 {
+		return fmt.Errorf("[ERROR] Not proceeding to delete Microsoft Graph Administrative Units for safety; prefix not specified")
+	}
+
+	client := d.client.MicrosoftGraph.AdministrativeUnits
+	deletedItemClient := d.client.MicrosoftGraph.DeletedItems
+
+	listOptions := administrativeunit.ListAdministrativeUnitsOperationOptions{
+		Filter: pointer.To(fmt.Sprintf("startswith(displayName, '%s')", d.opts.Prefix)),
+	}
+	resp, err := client.ListAdministrativeUnits(ctx, listOptions)
+	if err != nil {
+		return fmt.Errorf("listing Microsoft Graph Administrative Units with prefix %q: %+v", d.opts.Prefix, err)
+	}
+	if resp.Model == nil {
+		return nil
+	}
+
+	for _, au := range *resp.Model {
+		if au.Id == nil {
+			continue
+		}
+
+		id := *au.Id
+		displayName := au.DisplayName.GetOrZero()
+
+		if strings.TrimPrefix(displayName, d.opts.Prefix) != displayName {
+			if !d.opts.ActuallyDelete {
+				log.Printf("[DEBUG] Would have deleted Microsoft Graph Administrative Unit %q (ObjID: %s)", displayName, id)
+				continue
+			}
+
+			log.Printf("[DEBUG] Deleting Microsoft Graph Administrative Unit %q (ObjectId: %s)...", displayName, id)
+			if _, err := client.DeleteAdministrativeUnit(ctx, stable.NewDirectoryAdministrativeUnitID(id), administrativeunit.DefaultDeleteAdministrativeUnitOperationOptions()); err != nil {
+				log.Printf("[DEBUG] Error during deletion of Microsoft Graph Administrative Unit %q (ObjID: %s): %s", displayName, id, err)
+				continue
+			}
+			log.Printf("[DEBUG] Deleted Microsoft Graph Administrative Unit %q (ObjID: %s)", displayName, id)
+		}
+	}
+
+	deletedListOptions := deleteditem.ListDeletedItemAdministrativeUnitsOperationOptions{
+		Select: pointer.To([]string{"id", "displayName"}),
+	}
+
+	deletedResp, err := deletedItemClient.ListDeletedItemAdministrativeUnitsComplete(ctx, deletedListOptions)
+	if err != nil {
+		return fmt.Errorf("listing deleted administrative units: %+v", err)
+	}
+
+	for _, au := range deletedResp.Items {
+		if au.Id == nil {
+			continue
+		}
+
+		id := *au.Id
+		displayName := au.DisplayName.GetOrZero()
+
+		// TODO: Arguably if an administrative unit has been deleted we can quite safely assume it can be purged, remove check?
+		if strings.TrimPrefix(displayName, d.opts.Prefix) == displayName {
+			continue
+		}
+
+		if !d.opts.ActuallyDelete {
+			log.Printf("[DEBUG] Would have purged Microsoft Graph Administrative Unit %q (ObjID: %s)", displayName, id)
+			continue
+		}
+
+		log.Printf("[DEBUG] Purging Microsoft Graph Administrative Unit %q (ObjectId: %s)...", displayName, id)
+		if _, err := deletedItemClient.DeleteDeletedItem(ctx, stable.NewDirectoryDeletedItemID(id), deleteditem.DefaultDeleteDeletedItemOperationOptions()); err != nil {
+			log.Printf("[DEBUG] Error during purging of Microsoft Graph Administrative Unit %q (ObjID: %s): %s", displayName, id, err)
+			continue
+		}
+		log.Printf("[DEBUG] Purged Microsoft Graph Administrative Unit %q (ObjID: %s)", displayName, id)
 	}
 
 	return nil

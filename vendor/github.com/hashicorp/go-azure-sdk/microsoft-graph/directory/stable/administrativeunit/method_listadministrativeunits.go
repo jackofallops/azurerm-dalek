@@ -1,4 +1,4 @@
-package deleteditem
+package administrativeunit
 
 import (
 	"context"
@@ -13,18 +13,18 @@ import (
 // Copyright IBM Corp. 2023, 2026 All rights reserved.
 // Licensed under the MIT License. See NOTICE.txt in the project root for license information.
 
-type ListDeletedItemAdministrativeUnitsOperationResponse struct {
+type ListAdministrativeUnitsOperationResponse struct {
 	HttpResponse *http.Response
 	OData        *odata.OData
 	Model        *[]stable.AdministrativeUnit
 }
 
-type ListDeletedItemAdministrativeUnitsCompleteResult struct {
+type ListAdministrativeUnitsCompleteResult struct {
 	LatestHttpResponse *http.Response
 	Items              []stable.AdministrativeUnit
 }
 
-type ListDeletedItemAdministrativeUnitsOperationOptions struct {
+type ListAdministrativeUnitsOperationOptions struct {
 	Count     *bool
 	Expand    *odata.Expand
 	Filter    *string
@@ -37,17 +37,17 @@ type ListDeletedItemAdministrativeUnitsOperationOptions struct {
 	Top       *int64
 }
 
-func DefaultListDeletedItemAdministrativeUnitsOperationOptions() ListDeletedItemAdministrativeUnitsOperationOptions {
-	return ListDeletedItemAdministrativeUnitsOperationOptions{}
+func DefaultListAdministrativeUnitsOperationOptions() ListAdministrativeUnitsOperationOptions {
+	return ListAdministrativeUnitsOperationOptions{}
 }
 
-func (o ListDeletedItemAdministrativeUnitsOperationOptions) ToHeaders() *client.Headers {
+func (o ListAdministrativeUnitsOperationOptions) ToHeaders() *client.Headers {
 	out := client.Headers{}
 
 	return &out
 }
 
-func (o ListDeletedItemAdministrativeUnitsOperationOptions) ToOData() *odata.Query {
+func (o ListAdministrativeUnitsOperationOptions) ToOData() *odata.Query {
 	out := odata.Query{}
 	if o.Count != nil {
 		out.Count = *o.Count
@@ -79,17 +79,17 @@ func (o ListDeletedItemAdministrativeUnitsOperationOptions) ToOData() *odata.Que
 	return &out
 }
 
-func (o ListDeletedItemAdministrativeUnitsOperationOptions) ToQuery() *client.QueryParams {
+func (o ListAdministrativeUnitsOperationOptions) ToQuery() *client.QueryParams {
 	out := client.QueryParams{}
 
 	return &out
 }
 
-type ListDeletedItemAdministrativeUnitsCustomPager struct {
+type ListAdministrativeUnitsCustomPager struct {
 	NextLink *odata.Link `json:"@odata.nextLink"`
 }
 
-func (p *ListDeletedItemAdministrativeUnitsCustomPager) NextPageLink() *odata.Link {
+func (p *ListAdministrativeUnitsCustomPager) NextPageLink() *odata.Link {
 	defer func() {
 		p.NextLink = nil
 	}()
@@ -97,9 +97,8 @@ func (p *ListDeletedItemAdministrativeUnitsCustomPager) NextPageLink() *odata.Li
 	return p.NextLink
 }
 
-// ListDeletedItemAdministrativeUnits - Get the items of type microsoft.graph.administrativeUnit in the
-// microsoft.graph.directoryObject collection
-func (c DeletedItemClient) ListDeletedItemAdministrativeUnits(ctx context.Context, options ListDeletedItemAdministrativeUnitsOperationOptions) (result ListDeletedItemAdministrativeUnitsOperationResponse, err error) {
+// ListAdministrativeUnits - List administrativeUnits. Retrieve a list of administrativeUnit objects.
+func (c AdministrativeUnitClient) ListAdministrativeUnits(ctx context.Context, options ListAdministrativeUnitsOperationOptions) (result ListAdministrativeUnitsOperationResponse, err error) {
 	opts := client.RequestOptions{
 		ContentType: "application/json; charset=utf-8",
 		ExpectedStatusCodes: []int{
@@ -107,8 +106,8 @@ func (c DeletedItemClient) ListDeletedItemAdministrativeUnits(ctx context.Contex
 		},
 		HttpMethod:    http.MethodGet,
 		OptionsObject: options,
-		Pager:         &ListDeletedItemAdministrativeUnitsCustomPager{},
-		Path:          "/directory/deletedItems/microsoft.graph.administrativeUnit",
+		Pager:         &ListAdministrativeUnitsCustomPager{},
+		Path:          "/directory/administrativeUnits",
 		RetryFunc:     options.RetryFunc,
 	}
 
@@ -139,16 +138,16 @@ func (c DeletedItemClient) ListDeletedItemAdministrativeUnits(ctx context.Contex
 	return
 }
 
-// ListDeletedItemAdministrativeUnitsComplete retrieves all the results into a single object
-func (c DeletedItemClient) ListDeletedItemAdministrativeUnitsComplete(ctx context.Context, options ListDeletedItemAdministrativeUnitsOperationOptions) (ListDeletedItemAdministrativeUnitsCompleteResult, error) {
-	return c.ListDeletedItemAdministrativeUnitsCompleteMatchingPredicate(ctx, options, AdministrativeUnitOperationPredicate{})
+// ListAdministrativeUnitsComplete retrieves all the results into a single object
+func (c AdministrativeUnitClient) ListAdministrativeUnitsComplete(ctx context.Context, options ListAdministrativeUnitsOperationOptions) (ListAdministrativeUnitsCompleteResult, error) {
+	return c.ListAdministrativeUnitsCompleteMatchingPredicate(ctx, options, AdministrativeUnitOperationPredicate{})
 }
 
-// ListDeletedItemAdministrativeUnitsCompleteMatchingPredicate retrieves all the results and then applies the predicate
-func (c DeletedItemClient) ListDeletedItemAdministrativeUnitsCompleteMatchingPredicate(ctx context.Context, options ListDeletedItemAdministrativeUnitsOperationOptions, predicate AdministrativeUnitOperationPredicate) (result ListDeletedItemAdministrativeUnitsCompleteResult, err error) {
+// ListAdministrativeUnitsCompleteMatchingPredicate retrieves all the results and then applies the predicate
+func (c AdministrativeUnitClient) ListAdministrativeUnitsCompleteMatchingPredicate(ctx context.Context, options ListAdministrativeUnitsOperationOptions, predicate AdministrativeUnitOperationPredicate) (result ListAdministrativeUnitsCompleteResult, err error) {
 	items := make([]stable.AdministrativeUnit, 0)
 
-	resp, err := c.ListDeletedItemAdministrativeUnits(ctx, options)
+	resp, err := c.ListAdministrativeUnits(ctx, options)
 	if err != nil {
 		result.LatestHttpResponse = resp.HttpResponse
 		err = fmt.Errorf("loading results: %+v", err)
@@ -162,7 +161,7 @@ func (c DeletedItemClient) ListDeletedItemAdministrativeUnitsCompleteMatchingPre
 		}
 	}
 
-	result = ListDeletedItemAdministrativeUnitsCompleteResult{
+	result = ListAdministrativeUnitsCompleteResult{
 		LatestHttpResponse: resp.HttpResponse,
 		Items:              items,
 	}

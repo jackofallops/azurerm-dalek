@@ -58,6 +58,7 @@ github.com/hashicorp/go-azure-helpers/resourcemanager/zones
 ## explicit; go 1.26.3
 github.com/hashicorp/go-azure-sdk/microsoft-graph/applications/stable/application
 github.com/hashicorp/go-azure-sdk/microsoft-graph/common-types/stable
+github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/administrativeunit
 github.com/hashicorp/go-azure-sdk/microsoft-graph/directory/stable/deleteditem
 github.com/hashicorp/go-azure-sdk/microsoft-graph/groups/stable/group
 github.com/hashicorp/go-azure-sdk/microsoft-graph/serviceprincipals/stable/serviceprincipal
