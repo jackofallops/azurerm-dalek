@@ -2,6 +2,7 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -30,16 +31,19 @@ func (serviceBusNamespaceBreakPairingCleaner) Cleanup(ctx context.Context, id co
 		log.Printf("[DEBUG] Error retrieving the ServiceBus Namespaces within %s: %+v", id, err)
 	}
 
+	errs := make([]error, 0)
 	for _, namespace := range namespacesInResourceGroup.Items {
 		namespaceId, err := disasterrecoveryconfigs.ParseNamespaceIDInsensitively(*namespace.Id)
 		if err != nil {
 			log.Printf("[ERROR] Parsing ServiceBus Namespace ID %q: %+v", *namespace.Id, err)
+			errs = append(errs, fmt.Errorf("parsing ServiceBus Namespace ID %q: %+v", *namespace.Id, err))
 			continue
 		}
 		log.Printf("[DEBUG] Finding Disaster Recovery Configs within %s", *namespaceId)
 		configs, err := serviceBusClient.DisasterRecoveryConfigs.ListComplete(ctx, *namespaceId)
 		if err != nil {
-			return fmt.Errorf("finding Disaster Recovery Configs within %s: %+v", *namespaceId, err)
+			errs = append(errs, fmt.Errorf("finding Disaster Recovery Configs within %s: %+v", *namespaceId, err))
+			continue
 		}
 
 		for _, config := range configs.Items {
@@ -49,7 +53,8 @@ func (serviceBusNamespaceBreakPairingCleaner) Cleanup(ctx context.Context, id co
 			}
 			configId, err := disasterrecoveryconfigs.ParseDisasterRecoveryConfigIDInsensitively(*config.Id)
 			if err != nil {
-				return fmt.Errorf("parsing the Disaster Recovery Config ID %q: %+v", *config.Id, err)
+				errs = append(errs, fmt.Errorf("parsing the Disaster Recovery Config ID %q: %+v", *config.Id, err))
+				continue
 			}
 
 			if !opts.ActuallyDelete {
@@ -60,7 +65,8 @@ func (serviceBusNamespaceBreakPairingCleaner) Cleanup(ctx context.Context, id co
 			log.Printf("[DEBUG] Breaking Pairing for %s..", *configId)
 			if resp, err := serviceBusClient.DisasterRecoveryConfigs.BreakPairing(ctx, *configId); err != nil {
 				if !response.WasNotFound(resp.HttpResponse) {
-					return fmt.Errorf("breaking pairing for %s: %+v", *configId, err)
+					errs = append(errs, fmt.Errorf("breaking pairing for %s: %+v", *configId, err))
+					continue
 				}
 			}
 			log.Printf("[DEBUG] Polling until Pairing is broken for %s..", *configId)
@@ -70,12 +76,13 @@ func (serviceBusNamespaceBreakPairingCleaner) Cleanup(ctx context.Context, id co
 			}
 			poller := pollers.NewPoller(pollerType, 30*time.Second, pollers.DefaultNumberOfDroppedConnectionsToAllow)
 			if err := poller.PollUntilDone(ctx); err != nil {
-				return fmt.Errorf("polling until the Pairing is broken for %s: %+v", *configId, err)
+				errs = append(errs, fmt.Errorf("polling until the Pairing is broken for %s: %+v", *configId, err))
+				continue
 			}
 			log.Printf("[DEBUG] Pairing Broken for %s", *configId)
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func (serviceBusNamespaceBreakPairingCleaner) ResourceTypes() []string {

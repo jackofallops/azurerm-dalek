@@ -78,11 +78,14 @@ func (d deleteResourceGroupsInSubscriptionCleaner) Cleanup(ctx context.Context, 
 		// However since there's a non-trivial number of these, let's try and determine if we
 		// need to run the cleaners first
 		needsCleaners, err := d.resourceGroupContainsResourceTypes(ctx, client, id, resourceTypes)
+		runCleaners := true
 		if err != nil {
-			return fmt.Errorf("determining if %s contains the resource types needed for cleaning: %+v", id, err)
+			log.Printf("[WARN] Determining if %s contains resource types failed (%v); falling back to running cleaners", id, err)
+		} else if needsCleaners != nil {
+			runCleaners = *needsCleaners
 		}
 
-		if *needsCleaners {
+		if runCleaners {
 			log.Printf("[DEBUG] Running Resource Group Cleaners for %s..", id)
 			for _, cleaner := range ResourceGroupCleaners {
 				log.Printf("[DEBUG] Running Resource Group Cleaner %q..", cleaner.Name())

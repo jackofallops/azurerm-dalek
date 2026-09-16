@@ -35,12 +35,11 @@ func (p purgeSoftDeletedMachineLearningWorkspacesInSubscriptionCleaner) Cleanup(
 			continue
 		}
 
-		if !strings.HasSuffix(workspaceId.ResourceGroupName, opts.Prefix) {
+		if !strings.HasPrefix(workspaceId.ResourceGroupName, opts.Prefix) {
 			log.Printf("[DEBUG] Not deleting Machine Learning Workspace %q as it does not match target RG prefix %q", *workspaceId, opts.Prefix)
 			continue
 		}
 
-		log.Printf("[DEBUG] Purging Soft-Deleted %s..", *workspaceId)
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have purged soft-deleted Machine Learning Workspace %q..", *workspaceId)
 			continue

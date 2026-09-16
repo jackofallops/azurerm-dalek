@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
@@ -49,6 +51,16 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 			continue
 		}
 
+		if !strings.HasPrefix(vaultId.ResourceGroupName, opts.Prefix) {
+			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", *vaultId, opts.Prefix)
+			continue
+		}
+
+		if !opts.ActuallyDelete {
+			log.Printf("[DEBUG] Would have deleted %s..", vaultId)
+			continue
+		}
+
 		// Update the vault to be mutable
 		isSoftDeleteEnabled := false
 		isImmutable := false
@@ -81,7 +93,6 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 
 			if err := vaultsClient.UpdateThenPoll(ctx, *vaultId, patch, vaults.DefaultUpdateOperationOptions()); err != nil {
 				errs = append(errs, fmt.Errorf("updating %s to not be mutable: %+v", vaultId, err))
-				continue
 			}
 		}
 
@@ -92,28 +103,27 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 		}
 
 		backupItems, err := backupProtectedItemsClient.List(ctx, *backupItemsVaultId, backupprotecteditems.ListOperationOptions{})
-		if err != nil || backupItems.Model == nil {
+		if err != nil {
 			errs = append(errs, fmt.Errorf("listing Backup Protected Items for %q: %+v", backupItemsVaultId.ID(), err))
-			continue
-		}
+		} else if backupItems.Model != nil {
+			for _, backupItem := range *backupItems.Model {
+				if backupItem.Id == nil {
+					continue
+				}
 
-		for _, backupItem := range *backupItems.Model {
-			if backupItem.Id == nil {
-				continue
-			}
+				backupItemId, err := protecteditems.ParseProtectedItemID(*backupItem.Id)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("[DEBUG] parsing id %q: %+v", *backupItemId, err))
+					continue
+				}
 
-			backupItemId, err := protecteditems.ParseProtectedItemID(*backupItem.Id)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("[DEBUG] parsing id %q: %+v", *backupItemId, err))
-				continue
-			}
-
-			// This process takes awhile and even after completing we don't have a guarantee that the vault can't see these items anymore so we'll just fire and forget
-			// and expect this cleaner to have to run multiple times to get everything cleared out
-			_, err = protectedItemsClient.Delete(ctx, *backupItemId)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("[DEBUG] deleting %q: %+v", backupItemId, err))
-				continue
+				// This process takes awhile and even after completing we don't have a guarantee that the vault can't see these items anymore so we'll just fire and forget
+				// and expect this cleaner to have to run multiple times to get everything cleared out
+				_, err = protectedItemsClient.Delete(ctx, *backupItemId)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("[DEBUG] deleting %q: %+v", backupItemId, err))
+					continue
+				}
 			}
 		}
 

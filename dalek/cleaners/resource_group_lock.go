@@ -44,7 +44,12 @@ func (removeLocksFromResourceGroupCleaner) Cleanup(ctx context.Context, id commo
 				continue
 			}
 
-			log.Printf("[DEBUG]   Attemping to remove lock %s from: %s", id, id.ResourceGroupName)
+			if !opts.ActuallyDelete {
+				log.Printf("[DEBUG]   Would have removed lock %s from: %s", *lock.Name, id.ResourceGroupName)
+				continue
+			}
+
+			log.Printf("[DEBUG]   Attemping to remove lock %s from: %s", *lock.Name, id.ResourceGroupName)
 
 			if _, err := client.ResourceManager.LocksClient.DeleteByScope(ctx, *lockId); err != nil {
 				log.Printf("[DEBUG]   Unable to delete lock %s on resource group %q", *lock.Name, id.ResourceGroupName)

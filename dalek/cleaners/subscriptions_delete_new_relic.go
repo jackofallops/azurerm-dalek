@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/newrelic/2024-10-01/monitors"
@@ -38,6 +39,11 @@ func (p deleteNewRelicSubscriptionCleaner) Cleanup(ctx context.Context, subscrip
 		monitorId, err := monitors.ParseMonitorID(*monitor.Id)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("[DEBUG] Parsing monitor Id %q: %+v", *monitor.Id, err))
+			continue
+		}
+
+		if !strings.HasPrefix(monitorId.ResourceGroupName, opts.Prefix) {
+			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", *monitorId, opts.Prefix)
 			continue
 		}
 

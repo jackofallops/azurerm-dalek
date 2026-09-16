@@ -38,7 +38,8 @@ func (p deleteStorageSyncSubscriptionCleaner) Cleanup(ctx context.Context, subsc
 	}
 
 	if storageSyncList.Model == nil || storageSyncList.Model.Value == nil {
-		return fmt.Errorf("listing storage syncs: model/value was nil")
+		log.Printf("[DEBUG] No Storage Sync services found in %s", subscriptionId)
+		return nil
 	}
 
 	for _, storageSync := range *storageSyncList.Model.Value {

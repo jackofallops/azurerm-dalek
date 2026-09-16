@@ -104,9 +104,15 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					continue
 				}
 
-				if err := netAppVolumeReplicationClient.VolumesDeleteReplicationThenPoll(ctx, *volumeReplicationId); err != nil {
-					errs = append(errs, fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err))
-					continue
+				hasReplication := volume.Properties.DataProtection != nil &&
+					volume.Properties.DataProtection.Replication != nil &&
+					volume.Properties.DataProtection.Replication.EndpointType != nil &&
+					strings.EqualFold(string(*volume.Properties.DataProtection.Replication.EndpointType), string(volumes.EndpointTypeDst))
+
+				if hasReplication {
+					if err := netAppVolumeReplicationClient.VolumesDeleteReplicationThenPoll(ctx, *volumeReplicationId); err != nil {
+						errs = append(errs, fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err))
+					}
 				}
 
 				forceDelete := true

@@ -51,6 +51,7 @@ func (d *Dalek) deleteManagementGroups(ctx context.Context) error {
 		}
 		if !d.opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted Management Group %q", id)
+			continue
 		}
 
 		log.Printf("[DEBUG]   Deleting %s", id)

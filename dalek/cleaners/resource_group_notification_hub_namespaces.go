@@ -2,6 +2,7 @@ package cleaners
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -31,6 +32,7 @@ func (c notificationHubNamespacesCleaner) Cleanup(ctx context.Context, id common
 		return fmt.Errorf("finding the Namespace IDs within %s: %+v", id, err)
 	}
 
+	errs := make([]error, 0)
 	for _, namespaceId := range *namespaceIds {
 		if !opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted %s..", namespaceId)
@@ -39,12 +41,13 @@ func (c notificationHubNamespacesCleaner) Cleanup(ctx context.Context, id common
 
 		log.Printf("[DEBUG] Deleting %s..", namespaceId)
 		if _, err := client.ResourceManager.NotificationHubNamespaceClient.Delete(ctx, namespaceId); err != nil {
-			return fmt.Errorf("deleting %s: %+v", namespaceId, err)
+			errs = append(errs, fmt.Errorf("deleting %s: %+v", namespaceId, err))
+			continue
 		}
 		log.Printf("[DEBUG] Deleted %s.", namespaceId)
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 func (c notificationHubNamespacesCleaner) ResourceTypes() []string {
