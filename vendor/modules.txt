@@ -178,6 +178,7 @@ github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/cloude
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/registeredserverresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource
 github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource
+github.com/hashicorp/go-azure-sdk/resource-manager/vmware/2024-09-01/datastores
 github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-11-01/resourceproviders
 github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01
 github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01/sapapplicationserverinstances

@@ -43,6 +43,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/registeredserverresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/storagesyncservicesresource"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/storagesync/2020-03-01/syncgroupresource"
+	vmwareDatastores "github.com/hashicorp/go-azure-sdk/resource-manager/vmware/2024-09-01/datastores"
 	webResourceProviders "github.com/hashicorp/go-azure-sdk/resource-manager/web/2024-11-01/resourceproviders"
 	workloads "github.com/hashicorp/go-azure-sdk/resource-manager/workloads/2024-09-01"
 	"github.com/hashicorp/go-azure-sdk/sdk/auth"
@@ -99,6 +100,7 @@ type ResourceManagerClient struct {
 	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
 	StorageSyncGroupClient                     *syncgroupresource.SyncGroupResourceClient
 	StorageSyncRegisteredServerClient          *registeredserverresource.RegisteredServerResourceClient
+	VMwareDatastoresClient                     *vmwareDatastores.DataStoresClient
 	WebResourceProviderClient                  *webResourceProviders.ResourceProvidersClient
 	WorkloadsClient                            *workloads.Client
 }
@@ -431,6 +433,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		return nil, fmt.Errorf("building Workloads Client: %+v", err)
 	}
 
+	vmwareDatastoresClient, err := vmwareDatastores.NewDataStoresClientWithBaseURI(environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building VMware Datastores Client: %+v", err)
+	}
+	vmwareDatastoresClient.Client.Authorizer = resourceManagerAuthorizer
+
 	return &ResourceManagerClient{
 		AuthorizationClient:                        authorizationClient,
 		ComputeClient:                              computeClient,
@@ -465,6 +473,7 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		StorageSyncGroupClient:                     storageSyncGroupClient,
 		StorageSyncCloudEndpointClient:             storageSyncCloudEndpointClient,
 		StorageSyncRegisteredServerClient:          storageSyncRegisteredServerClient,
+		VMwareDatastoresClient:                     vmwareDatastoresClient,
 		WebResourceProviderClient:                  webResourceProvidersClient,
 		WorkloadsClient:                            workloadsClient,
 	}, nil
