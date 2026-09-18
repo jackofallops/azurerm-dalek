@@ -9,6 +9,8 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
+	netAppBackups "github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/backups"
+	netAppBackupVaults "github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/backupvaults"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/capacitypools"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/netappaccounts"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/netapp/2025-03-01/volumes"
@@ -29,6 +31,8 @@ func (p deleteNetAppSubscriptionCleaner) Name() string {
 
 func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscriptionId commonids.SubscriptionId, client *clients.AzureClient, opts options.Options) error {
 	netAppAccountClient := client.ResourceManager.NetAppAccountClient
+	netAppBackupsClient := client.ResourceManager.NetAppBackupsClient
+	netAppBackupVaultClient := client.ResourceManager.NetAppBackupVaultsClient
 	netAppCapcityPoolClient := client.ResourceManager.NetAppCapacityPoolClient
 	netAppVolumeClient := client.ResourceManager.NetAppVolumeClient
 	netAppVolumeReplicationClient := client.ResourceManager.NetAppVolumeReplicationClient
@@ -49,17 +53,18 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			continue
 		}
 
-		accountIdForCapacityPool, err := capacitypools.ParseNetAppAccountID(*account.Id)
+		accountIdForCapacityPool, err := capacitypools.ParseNetAppAccountIDInsensitively(*account.Id)
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 
-		if !strings.HasPrefix(accountIdForCapacityPool.ResourceGroupName, opts.Prefix) {
+		if !strings.HasPrefix(strings.ToLower(accountIdForCapacityPool.ResourceGroupName), strings.ToLower(opts.Prefix)) {
 			log.Printf("[DEBUG] Not deleting %q as it does not match target RG prefix %q", *accountIdForCapacityPool, opts.Prefix)
 			continue
 		}
 
-		accountId, err := netappaccounts.ParseNetAppAccountID(*account.Id)
+		accountId, err := netappaccounts.ParseNetAppAccountIDInsensitively(*account.Id)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -78,14 +83,14 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 				continue
 			}
 
-			capacityPoolId, err := capacitypools.ParseCapacityPoolID(*capacityPool.Id)
+			capacityPoolId, err := capacitypools.ParseCapacityPoolIDInsensitively(*capacityPool.Id)
 			if err != nil {
 				errs = append(errs, err)
 				canDeleteAccount = false
 				continue
 			}
 
-			capacityPoolForVolumesId, err := volumes.ParseCapacityPoolID(*capacityPool.Id)
+			capacityPoolForVolumesId, err := volumes.ParseCapacityPoolIDInsensitively(*capacityPool.Id)
 			if err != nil {
 				errs = append(errs, err)
 				canDeleteAccount = false
@@ -105,14 +110,14 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					continue
 				}
 
-				volumeId, err := volumes.ParseVolumeID(*volume.Id)
+				volumeId, err := volumes.ParseVolumeIDInsensitively(*volume.Id)
 				if err != nil {
 					errs = append(errs, err)
 					canDeletePool = false
 					continue
 				}
 
-				volumeReplicationId, err := volumesreplication.ParseVolumeID(*volume.Id)
+				volumeReplicationId, err := volumesreplication.ParseVolumeIDInsensitively(*volume.Id)
 				if err != nil {
 					errs = append(errs, err)
 					canDeletePool = false
@@ -186,8 +191,88 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 			}
 		}
 
+		accountIdForBackupVaults, err := netAppBackupVaults.ParseNetAppAccountIDInsensitively(*account.Id)
+		if err != nil {
+			errs = append(errs, err)
+			canDeleteAccount = false
+		} else {
+			backupVaultList, err := netAppBackupVaultClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVaults)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("listing NetApp Backup Vaults for %s: %+v", accountIdForBackupVaults, err))
+				canDeleteAccount = false
+			} else {
+				for _, backupVault := range backupVaultList.Items {
+					if backupVault.Id == nil {
+						continue
+					}
+
+					backupVaultId, err := netAppBackupVaults.ParseBackupVaultIDInsensitively(*backupVault.Id)
+					if err != nil {
+						errs = append(errs, err)
+						canDeleteAccount = false
+						continue
+					}
+
+					backupVaultForBackupsId, err := netAppBackups.ParseBackupVaultIDInsensitively(*backupVault.Id)
+					if err != nil {
+						errs = append(errs, err)
+						canDeleteAccount = false
+						continue
+					}
+
+					canDeleteVault := true
+					backupList, err := netAppBackupsClient.ListByVaultComplete(ctx, *backupVaultForBackupsId, netAppBackups.DefaultListByVaultOperationOptions())
+					if err != nil {
+						errs = append(errs, fmt.Errorf("listing Backups for %s: %+v", backupVaultForBackupsId, err))
+						canDeleteVault = false
+					} else {
+						for _, backup := range backupList.Items {
+							if backup.Id == nil {
+								continue
+							}
+
+							backupId, err := netAppBackups.ParseBackupIDInsensitively(*backup.Id)
+							if err != nil {
+								errs = append(errs, err)
+								canDeleteVault = false
+								continue
+							}
+
+							if !opts.ActuallyDelete {
+								log.Printf("[DEBUG] Would have deleted %s..", backupId)
+								continue
+							}
+
+							if err := netAppBackupsClient.DeleteThenPoll(ctx, *backupId); err != nil {
+								errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", backupId, err))
+								canDeleteVault = false
+								continue
+							}
+						}
+					}
+
+					if !canDeleteVault {
+						log.Printf("[DEBUG] Skipping deletion of NetApp Backup Vault %s because one or more child backups failed to delete", backupVaultId)
+						canDeleteAccount = false
+						continue
+					}
+
+					if !opts.ActuallyDelete {
+						log.Printf("[DEBUG] Would have deleted %s..", backupVaultId)
+						continue
+					}
+
+					if err := netAppBackupVaultClient.DeleteThenPoll(ctx, *backupVaultId); err != nil {
+						errs = append(errs, fmt.Errorf("[DEBUG] Unable to delete %s: %+v", backupVaultId, err))
+						canDeleteAccount = false
+						continue
+					}
+				}
+			}
+		}
+
 		if !canDeleteAccount {
-			log.Printf("[DEBUG] Skipping deletion of NetApp Account %s because one or more child capacity pools failed to delete", accountId)
+			log.Printf("[DEBUG] Skipping deletion of NetApp Account %s because one or more child resources failed to delete", accountId)
 			continue
 		}
 
