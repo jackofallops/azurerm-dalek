@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/management/2023-04-01/managementgroups"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/management/2023-04-01/managements"
@@ -42,13 +43,18 @@ func (d *Dalek) deleteManagementGroups(ctx context.Context) error {
 			}
 		}
 
-		groupName := *group.Name
-		id := commonids.NewManagementGroupID(*group.Id)
-
-		if _, err := uuid.ParseUUID(groupName); err != nil {
-			log.Printf("[DEBUG]   Skipping Management Group %q", groupName)
+		groupName := strings.ToLower(pointer.From(group.Name))
+		id, err := commonids.ParseManagementGroupIDInsensitively(*group.Id)
+		if err != nil {
+			log.Printf("[DEBUG] Skipping Management Group %q: %+v", groupName, err)
 			continue
 		}
+
+		if _, err := uuid.ParseUUID(groupName); err != nil && !strings.HasPrefix(groupName, "acctest") {
+			log.Printf("[DEBUG] Skipping Management Group %q", groupName)
+			continue
+		}
+
 		if !d.opts.ActuallyDelete {
 			log.Printf("[DEBUG] Would have deleted Management Group %q", id)
 			continue
@@ -56,7 +62,7 @@ func (d *Dalek) deleteManagementGroups(ctx context.Context) error {
 
 		log.Printf("[DEBUG]   Deleting %s", id)
 
-		if _, err := client.Delete(ctx, id, managementgroups.DefaultDeleteOperationOptions()); err != nil {
+		if _, err := client.Delete(ctx, *id, managementgroups.DefaultDeleteOperationOptions()); err != nil {
 			log.Printf("[DEBUG]   Error during deletion of %s: %s", id, err)
 			continue
 		}
