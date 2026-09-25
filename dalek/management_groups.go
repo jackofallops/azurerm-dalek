@@ -13,11 +13,12 @@ import (
 	"github.com/hashicorp/go-uuid"
 )
 
-func (d *Dalek) ManagementGroups(ctx context.Context) error {
+func (d *Dalek) ManagementGroups(ctx context.Context) []error {
+	var errs []error
 	if err := d.deleteManagementGroups(ctx); err != nil {
-		return fmt.Errorf("processing Management Groups: %+v", err)
+		errs = append(errs, fmt.Errorf("processing Management Groups: %+v", err))
 	}
-	return nil
+	return errs
 }
 
 func (d *Dalek) deleteManagementGroups(ctx context.Context) error {

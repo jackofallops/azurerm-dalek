@@ -16,28 +16,30 @@ import (
 	"github.com/hashicorp/go-azure-sdk/sdk/odata"
 )
 
-func (d *Dalek) MicrosoftGraph(ctx context.Context) error {
+func (d *Dalek) MicrosoftGraph(ctx context.Context) []error {
+	var errs []error
+
 	log.Printf("[DEBUG] Preparing to delete Service Principals")
 	if err := d.deleteMicrosoftGraphServicePrincipals(ctx); err != nil {
-		return fmt.Errorf("deleting Service Principals: %+v", err)
+		errs = append(errs, fmt.Errorf("deleting Service Principals: %+v", err))
 	}
 
 	log.Printf("[DEBUG] Preparing to delete Applications")
 	if err := d.deleteMicrosoftGraphApplications(ctx); err != nil {
-		return fmt.Errorf("deleting Applications: %+v", err)
+		errs = append(errs, fmt.Errorf("deleting Applications: %+v", err))
 	}
 
 	log.Printf("[DEBUG] Preparing to delete Groups")
 	if err := d.deleteMicrosoftGraphGroups(ctx); err != nil {
-		return fmt.Errorf("deleting Groups: %+v", err)
+		errs = append(errs, fmt.Errorf("deleting Groups: %+v", err))
 	}
 
 	log.Printf("[DEBUG] Preparing to delete Users")
 	if err := d.deleteMicrosoftGraphUsers(ctx); err != nil {
-		return fmt.Errorf("deleting Users: %+v", err)
+		errs = append(errs, fmt.Errorf("deleting Users: %+v", err))
 	}
 
-	return nil
+	return errs
 }
 
 func (d *Dalek) deleteMicrosoftGraphApplications(ctx context.Context) error {

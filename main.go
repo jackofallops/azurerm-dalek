@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -36,31 +35,72 @@ func main() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Hour)
 	defer cancel()
-	if err := run(ctx, credentials, opts); err != nil {
-		log.Print(err.Error())
+	results := run(ctx, credentials, opts)
+	if hasErrors(results) {
+		printErrorSummary(results)
 		os.Exit(1) // nolint gocritic
 	}
 }
 
-func run(ctx context.Context, credentials clients.Credentials, opts options.Options) error {
-	sdkClient, err := clients.BuildAzureClient(ctx, credentials)
-	if err != nil {
-		return fmt.Errorf("building Azure Clients: %+v", err)
+type phaseResult struct {
+	Phase  string
+	Errors []error
+}
+
+func hasErrors(results []phaseResult) bool {
+	for _, r := range results {
+		if len(r.Errors) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func printErrorSummary(results []phaseResult) {
+	var total int
+	for _, r := range results {
+		total += len(r.Errors)
 	}
 
-	errs := make([]error, 0) // nolint prealloc
+	log.Print("========================================")
+	log.Printf("ERROR SUMMARY (%d errors)", total)
+	log.Print("========================================")
+	n := 1
+	for _, r := range results {
+		if len(r.Errors) == 0 {
+			continue
+		}
+		log.Printf("  %s:", r.Phase)
+		for _, e := range r.Errors {
+			// Replace newlines in error text to keep summary output readable
+			msg := strings.ReplaceAll(e.Error(), "\n", " ")
+			log.Printf("    %d. %s", n, msg)
+			n++
+		}
+	}
+	log.Print("========================================")
+}
+
+func run(ctx context.Context, credentials clients.Credentials, opts options.Options) []phaseResult {
+	sdkClient, err := clients.BuildAzureClient(ctx, credentials)
+	if err != nil {
+		return []phaseResult{{Phase: "Initialisation", Errors: []error{fmt.Errorf("building Azure Clients: %+v", err)}}}
+	}
+
+	client := dalek.NewDalek(sdkClient, opts)
 
 	log.Printf("[DEBUG] Options: %s", opts)
 
-	client := dalek.NewDalek(sdkClient, opts)
+	var results []phaseResult
+
 	log.Printf("[DEBUG] Processing Resource Manager..")
-	errs = append(errs, client.ResourceManager(ctx)...)
+	results = append(results, phaseResult{Phase: "Resource Manager", Errors: client.ResourceManager(ctx)})
 
 	log.Printf("[DEBUG] Processing Microsoft Graph..")
-	errs = append(errs, client.MicrosoftGraph(ctx))
+	results = append(results, phaseResult{Phase: "Microsoft Graph", Errors: client.MicrosoftGraph(ctx)})
 
 	log.Printf("[DEBUG] Processing Management Groups..")
-	errs = append(errs, client.ManagementGroups(ctx))
+	results = append(results, phaseResult{Phase: "Management Groups", Errors: client.ManagementGroups(ctx)})
 
-	return errors.Join(errs...)
+	return results
 }
