@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotectioncontainers"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protectioncontainers"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/resourceguardproxies"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/resourceguardproxy"
 	"github.com/jackofallops/azurerm-dalek/clients"
 	"github.com/jackofallops/azurerm-dalek/dalek/options"
 )
@@ -32,6 +34,8 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 	backupProtectedItemsClient := client.ResourceManager.RecoveryServicesBackupProtectedItemsClient
 	backupProtectionContainersClient := client.ResourceManager.RecoveryServicesBackupProtectionContainers
 	protectionContainersClient := client.ResourceManager.RecoveryServicesProtectionContainers
+	resourceGuardProxiesClient := client.ResourceManager.RecoveryServicesResourceGuardProxiesClient
+	resourceGuardProxyClient := client.ResourceManager.RecoveryServicesResourceGuardProxyClient
 
 	errs := make([]error, 0)
 
@@ -102,8 +106,40 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 			continue
 		}
 
+		// Remove Resource Guard proxies first — a deleted Resource Guard blocks protected item deletion
+		guardProxiesVaultId := resourceguardproxies.NewVaultID(backupItemsVaultId.SubscriptionId, backupItemsVaultId.ResourceGroupName, backupItemsVaultId.VaultName)
+		guardProxies, err := resourceGuardProxiesClient.GetComplete(ctx, guardProxiesVaultId)
+		if err != nil {
+			if isResourceGroupNotFound(err) {
+				log.Printf("[DEBUG] Skipping %s - resource group no longer exists", vaultId)
+				continue
+			}
+			errs = append(errs, fmt.Errorf("listing Resource Guard proxies for %s: %+v", vaultId, err))
+		} else {
+			for _, proxy := range guardProxies.Items {
+				if proxy.Id == nil {
+					continue
+				}
+				proxyId, err := resourceguardproxy.ParseBackupResourceGuardProxyIDInsensitively(*proxy.Id)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("parsing Resource Guard proxy id %q: %+v", *proxy.Id, err))
+					continue
+				}
+				log.Printf("[DEBUG] Deleting Resource Guard proxy %s", proxyId)
+				if _, err := resourceGuardProxyClient.Delete(ctx, *proxyId); err != nil {
+					errs = append(errs, fmt.Errorf("deleting Resource Guard proxy %s: %+v", proxyId, err))
+					continue
+				}
+				log.Printf("[DEBUG] Deleted Resource Guard proxy %s", proxyId)
+			}
+		}
+
 		backupItems, err := backupProtectedItemsClient.List(ctx, *backupItemsVaultId, backupprotecteditems.ListOperationOptions{})
 		if err != nil {
+			if isResourceGroupNotFound(err) {
+				log.Printf("[DEBUG] Skipping %s - resource group no longer exists", vaultId)
+				continue
+			}
 			errs = append(errs, fmt.Errorf("listing Backup Protected Items for %q: %+v", backupItemsVaultId.ID(), err))
 		} else if backupItems.Model != nil {
 			for _, backupItem := range *backupItems.Model {
@@ -130,6 +166,10 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 		// Unregister Protection Containers, prerequisite to vault deletion
 		storageContainers, err := backupProtectionContainersClient.ListComplete(ctx, backupprotectioncontainers.VaultId(*backupItemsVaultId), backupprotectioncontainers.ListOperationOptions{Filter: pointer.To("backupManagementType eq 'AzureStorage'")})
 		if err != nil {
+			if isResourceGroupNotFound(err) {
+				log.Printf("[DEBUG] Skipping %s - resource group no longer exists", vaultId)
+				continue
+			}
 			errs = append(errs, fmt.Errorf("listing %s: %w", *backupItemsVaultId, err))
 			continue
 		}
@@ -159,4 +199,10 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 	}
 
 	return errors.Join(errs...)
+}
+
+// isResourceGroupNotFound checks if an error indicates the resource group no longer exists.
+// The autorest SDK wraps errors deeply so we check for the Azure error code in the message.
+func isResourceGroupNotFound(err error) bool {
+	return strings.Contains(err.Error(), "ResourceGroupNotFound")
 }

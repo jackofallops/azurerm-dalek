@@ -37,6 +37,8 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/backupprotectioncontainers"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protecteditems"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/protectioncontainers"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/resourceguardproxies"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/recoveryservicesbackup/2024-10-01/resourceguardproxy"
 	resourceGraph "github.com/hashicorp/go-azure-sdk/resource-manager/resourcegraph/2024-04-01/resources"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2020-05-01/managementlocks"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/resources/2022-09-01/resourcegroups"
@@ -99,6 +101,8 @@ type ResourceManagerClient struct {
 	RecoveryServicesBackupProtectedItemsClient *backupprotecteditems.BackupProtectedItemsClient
 	RecoveryServicesBackupProtectionContainers *backupprotectioncontainers.BackupProtectionContainersClient
 	RecoveryServicesProtectionContainers       *protectioncontainers.ProtectionContainersClient
+	RecoveryServicesResourceGuardProxiesClient *resourceguardproxies.ResourceGuardProxiesClient
+	RecoveryServicesResourceGuardProxyClient   *resourceguardproxy.ResourceGuardProxyClient
 	ServiceBus                                 *serviceBus.Client
 	StorageSyncClient                          *storagesyncservicesresource.StorageSyncServicesResourceClient
 	StorageSyncCloudEndpointClient             *cloudendpointresource.CloudEndpointResourceClient
@@ -399,6 +403,12 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 	recoveryServicesProtectionContainers := protectioncontainers.NewProtectionContainersClientWithBaseURI(*resourceManagerEndpoint)
 	recoveryServicesProtectionContainers.Client.Authorizer = autoRestAuthorizer
 
+	recoveryServicesResourceGuardProxiesClient := resourceguardproxies.NewResourceGuardProxiesClientWithBaseURI(*resourceManagerEndpoint)
+	recoveryServicesResourceGuardProxiesClient.Client.Authorizer = autoRestAuthorizer
+
+	recoveryServicesResourceGuardProxyClient := resourceguardproxy.NewResourceGuardProxyClientWithBaseURI(*resourceManagerEndpoint)
+	recoveryServicesResourceGuardProxyClient.Client.Authorizer = autoRestAuthorizer
+
 	resourceGraphClient, err := resourceGraph.NewResourcesClientWithBaseURI(environment.ResourceManager)
 	if err != nil {
 		return nil, fmt.Errorf("building ResourceGraph client: %+v", err)
@@ -485,6 +495,8 @@ func buildResourceManagerClient(ctx context.Context, creds auth.Credentials, env
 		RecoveryServicesBackupProtectionContainers: &recoveryServicesBackupProtectionContainersClient,
 		RecoveryServicesProtectionContainers:       &recoveryServicesProtectionContainers,
 		RecoveryServicesProtectedItemClient:        &recoveryServicesProtectedItemClient,
+		RecoveryServicesResourceGuardProxiesClient: &recoveryServicesResourceGuardProxiesClient,
+		RecoveryServicesResourceGuardProxyClient:   &recoveryServicesResourceGuardProxyClient,
 		RecoveryServicesVaultClient:                recoveryServicesVaultClient,
 		ServiceBus:                                 serviceBusClient,
 		StorageSyncClient:                          storageSyncClient,
