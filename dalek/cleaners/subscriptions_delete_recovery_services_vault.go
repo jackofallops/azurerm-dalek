@@ -125,7 +125,14 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 					errs = append(errs, fmt.Errorf("parsing Resource Guard proxy id %q: %+v", *proxy.Id, err))
 					continue
 				}
-				log.Printf("[DEBUG] Deleting Resource Guard proxy %s", proxyId)
+				log.Printf("[DEBUG] Unlocking and deleting Resource Guard proxy %s", proxyId)
+				unlockReq := resourceguardproxy.UnlockDeleteRequest{
+					ResourceToBeDeleted: pointer.To(proxyId.ID()),
+				}
+				if _, err := resourceGuardProxyClient.UnlockDelete(ctx, *proxyId, unlockReq); err != nil {
+					errs = append(errs, fmt.Errorf("unlocking Resource Guard proxy %s: %+v", proxyId, err))
+					continue
+				}
 				if _, err := resourceGuardProxyClient.Delete(ctx, *proxyId); err != nil {
 					errs = append(errs, fmt.Errorf("deleting Resource Guard proxy %s: %+v", proxyId, err))
 					continue
@@ -199,10 +206,4 @@ func (p deleteRecoveryServicesVaultSubscriptionCleaner) Cleanup(ctx context.Cont
 	}
 
 	return errors.Join(errs...)
-}
-
-// isResourceGroupNotFound checks if an error indicates the resource group no longer exists.
-// The autorest SDK wraps errors deeply so we check for the Azure error code in the message.
-func isResourceGroupNotFound(err error) bool {
-	return strings.Contains(err.Error(), "ResourceGroupNotFound")
 }

@@ -74,6 +74,10 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 
 		capacityPoolList, err := netAppCapcityPoolClient.PoolsListComplete(ctx, *accountIdForCapacityPool)
 		if err != nil {
+			if isResourceGroupNotFound(err) {
+				log.Printf("[DEBUG] Skipping %s - resource group no longer exists", accountIdForCapacityPool)
+				continue
+			}
 			errs = append(errs, fmt.Errorf("listing NetApp Capacity Pools for %s: %+v", accountIdForCapacityPool, err))
 			canDeleteAccount = false
 		}
@@ -133,6 +137,12 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 					if !opts.ActuallyDelete {
 						log.Printf("[DEBUG] Would have deleted replication for %s..", volumeReplicationId)
 					} else {
+						forceBreak := true
+						if err := netAppVolumeReplicationClient.VolumesBreakReplicationThenPoll(ctx, *volumeReplicationId, volumesreplication.BreakReplicationRequest{
+							ForceBreakReplication: &forceBreak,
+						}); err != nil {
+							errs = append(errs, fmt.Errorf("breaking replication for %s: %+v", volumeReplicationId, err))
+						}
 						if err := netAppVolumeReplicationClient.VolumesDeleteReplicationThenPoll(ctx, *volumeReplicationId); err != nil {
 							errs = append(errs, fmt.Errorf("deleting replication for %s: %+v", volumeReplicationId, err))
 						}
@@ -198,6 +208,10 @@ func (p deleteNetAppSubscriptionCleaner) Cleanup(ctx context.Context, subscripti
 		} else {
 			backupVaultList, err := netAppBackupVaultClient.ListByNetAppAccountComplete(ctx, *accountIdForBackupVaults)
 			if err != nil {
+				if isResourceGroupNotFound(err) {
+					log.Printf("[DEBUG] Skipping %s - resource group no longer exists", accountIdForBackupVaults)
+					continue
+				}
 				errs = append(errs, fmt.Errorf("listing NetApp Backup Vaults for %s: %+v", accountIdForBackupVaults, err))
 				canDeleteAccount = false
 			} else {
